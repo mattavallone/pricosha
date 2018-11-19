@@ -24,7 +24,7 @@ def hello():
 # Define route for login
 @app.route('/login')
 def login():
-    return render_template('login.html')
+    return render_template('logicdn.html')
 
 
 # Define route for register
