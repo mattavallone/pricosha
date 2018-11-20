@@ -1,6 +1,7 @@
 # Import Flask Library
 from flask import Flask, render_template, request, session, url_for, redirect
 import pymysql.cursors
+from hashlib import sha256
 
 # Initialize the app from Flask
 app = Flask(__name__)
@@ -10,7 +11,7 @@ conn = pymysql.connect(host='localhost',
                        port=3306,
                        user='root',
                        password='',
-                       db='flaskdemo',
+                       db='pricosha',
                        charset='utf8mb4',
                        cursorclass=pymysql.cursors.DictCursor)
 
@@ -24,7 +25,7 @@ def hello():
 # Define route for login
 @app.route('/login')
 def login():
-    return render_template('logicdn.html')
+    return render_template('login.html')
 
 
 # Define route for register
@@ -37,27 +38,21 @@ def register():
 @app.route('/loginAuth', methods=['GET', 'POST'])
 def loginAuth():
     # grabs information from the forms
-    username = request.form['username']
+    email = request.form['email']
     password = request.form['password']
+    pw = sha256(password.encode('utf-8')).hexdigest()  # hashed password
 
-    # cursor used to send queries
     cursor = conn.cursor()
-    # executes query
-    query = 'SELECT * FROM user WHERE username = %s and password = %s'
-    cursor.execute(query, (username, password))
-    # stores the results in a variable
+    query = 'SELECT * FROM person WHERE email = %s and password = %s'
+    cursor.execute(query, (email, pw))
     data = cursor.fetchone()
-    # use fetchall() if you are expecting more than 1 data row
     cursor.close()
     error = None
-    if (data):
-        # creates a session for the the user
-        # session is a built in
-        session['username'] = username
+    if data:  # if person has an account
+        session['email'] = email  # creates session for person
         return redirect(url_for('home'))
-    else:
-        # returns an error message to the html page
-        error = 'Invalid login or username'
+    else:  # returns an error message to the html page
+        error = 'Invalid email or password'
         return render_template('login.html', error=error)
 
 
@@ -65,25 +60,23 @@ def loginAuth():
 @app.route('/registerAuth', methods=['GET', 'POST'])
 def registerAuth():
     # grabs information from the forms
-    username = request.form['username']
+    fname = request.form['firstName']
+    lname = request.form['lastName']
+    email = request.form['email']
     password = request.form['password']
+    pw = sha256(password.encode('utf-8')).hexdigest()  # hashed password
 
-    # cursor used to send queries
     cursor = conn.cursor()
-    # executes query
-    query = 'SELECT * FROM user WHERE username = %s'
-    cursor.execute(query, username)
-    # stores the results in a variable
+    query = 'SELECT * FROM person WHERE email = %s'
+    cursor.execute(query, email)
     data = cursor.fetchone()
-    # use fetchall() if you are expecting more than 1 data row
     error = None
-    if data:
-        # If the previous query returns data, then user exists
-        error = "This user already exists"
+    if data:  # checking to see if person already exists
+        error = "This person already exists"
         return render_template('register.html', error=error)
     else:
-        ins = 'INSERT INTO user VALUES(%s, %s)'
-        cursor.execute(ins, (username, password))
+        ins = 'INSERT INTO person VALUES(%s, %s, %s, %s)'
+        cursor.execute(ins, (email, pw, fname, lname))
         conn.commit()
         cursor.close()
         return render_template('index.html')
