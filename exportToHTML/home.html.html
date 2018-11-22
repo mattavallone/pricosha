@@ -1,0 +1,60 @@
+<html>
+<head>
+<title>home.html</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<style type="text/css">
+.s0 { color: #e8bf6a;}
+.s1 { color: #a9b7c6;}
+.s2 { color: #bababa;}
+.s3 { color: #a5c261;}
+</style>
+</head>
+<body bgcolor="#2b2b2b">
+<table CELLSPACING=0 CELLPADDING=5 COLS=1 WIDTH="100%" BGCOLOR="#606060" >
+<tr><td><center>
+<font face="Arial, Helvetica" color="#000000">
+home.html</font>
+</center></td></tr></table>
+<pre><span class="s0">&lt;html&gt;</span>
+&lt;head&gt;
+&lt;/head&gt;
+&lt;body&gt;
+&lt;form <span class="s2">action=</span><span class="s3">&quot;/post&quot; </span><span class="s2">method=</span><span class="s3">&quot;POST&quot;</span><span class="s0">&gt;</span>
+	&lt;h1&gt;<span class="s1">Welcome {{username}}</span><span class="s0">&lt;/h1&gt;</span>
+&lt;/form&gt;
+
+&lt;style <span class="s2">type=</span><span class="s3">&quot;text/css&quot;</span><span class="s0">&gt;</span>
+	<span class="s1">table, th, td{</span>
+		border: 1px solid black;
+	}
+<span class="s0">&lt;/style&gt;</span>
+
+<span class="s1">Here are your posts:</span>
+
+<span class="s0">&lt;table&gt;</span>
+	&lt;th&gt;<span class="s1">item_id</span><span class="s0">&lt;/th&gt;</span>
+	&lt;th&gt;<span class="s1">email_post</span><span class="s0">&lt;/th&gt;</span>
+	&lt;th&gt;<span class="s1">post_time</span><span class="s0">&lt;/th&gt;</span>
+	&lt;th&gt;<span class="s1">file_path</span><span class="s0">&lt;/th&gt;</span>
+	&lt;th&gt;<span class="s1">item_name</span><span class="s0">&lt;/th&gt;</span>
+
+<span class="s1">{% for line in posts %}</span>
+	<span class="s0">&lt;tr&gt;</span>
+		&lt;td&gt;<span class="s1">{{line.item_id}}</span><span class="s0">&lt;/td&gt;</span>
+		&lt;td&gt;<span class="s1">{{line.email_post}}</span><span class="s0">&lt;/td&gt;</span>
+		&lt;td&gt;<span class="s1">{{line.post_time}}</span><span class="s0">&lt;/td&gt;</span>
+		&lt;td&gt;<span class="s1">{{line.file_path}}</span><span class="s0">&lt;/td&gt;</span>
+		&lt;td&gt;<span class="s1">{{line.item_name}}</span><span class="s0">&lt;/td&gt;</span>
+	&lt;/tr&gt;
+<span class="s1">{% endfor %}</span>
+<span class="s0">&lt;/table&gt;</span>
+
+&lt;a <span class="s2">href=</span><span class="s3">&quot;/logout&quot;</span><span class="s0">&gt;</span><span class="s1">Logout</span><span class="s0">&lt;/a&gt;</span>
+
+&lt;/body&gt;
+
+
+&lt;/html&gt;
+</pre>
+</body>
+</html>

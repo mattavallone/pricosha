@@ -1,0 +1,132 @@
+<html>
+<head>
+<title>init1.py</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<style type="text/css">
+.s0 { color: #808080;}
+.s1 { color: #a9b7c6;}
+.s2 { color: #cc7832;}
+.s3 { color: #6a8759;}
+.s4 { color: #6897bb;}
+</style>
+</head>
+<body bgcolor="#2b2b2b">
+<table CELLSPACING=0 CELLPADDING=5 COLS=1 WIDTH="100%" BGCOLOR="#606060" >
+<tr><td><center>
+<font face="Arial, Helvetica" color="#000000">
+init1.py</font>
+</center></td></tr></table>
+<pre><span class="s0"># Matthew Avallone, Beamlak Hailemariam, Allie Haber</span>
+# CS3083 Databases
+# Pricosha
+
+<span class="s2">from </span><span class="s1">flask </span><span class="s2">import </span><span class="s1">Flask</span><span class="s2">, </span><span class="s1">render_template</span><span class="s2">, </span><span class="s1">request</span><span class="s2">, </span><span class="s1">session</span><span class="s2">, </span><span class="s1">url_for</span><span class="s2">, </span><span class="s1">redirect</span>
+<span class="s2">import </span><span class="s1">pymysql.cursors</span>
+<span class="s2">from </span><span class="s1">hashlib </span><span class="s2">import </span><span class="s1">sha256</span>
+
+<span class="s0"># Initialize the app from Flask</span>
+<span class="s1">app = Flask(__name__)</span>
+
+<span class="s0"># Configure MySQL</span>
+<span class="s1">conn = pymysql.connect(host=</span><span class="s3">'localhost'</span><span class="s2">,</span>
+                       <span class="s1">port=</span><span class="s4">3306</span><span class="s2">,</span>
+                       <span class="s1">user=</span><span class="s3">'root'</span><span class="s2">,</span>
+                       <span class="s1">password=</span><span class="s3">''</span><span class="s2">,</span>
+                       <span class="s1">db=</span><span class="s3">'pricosha'</span><span class="s2">,</span>
+                       <span class="s1">charset=</span><span class="s3">'utf8mb4'</span><span class="s2">,</span>
+                       <span class="s1">cursorclass=pymysql.cursors.DictCursor)</span>
+
+
+<span class="s0"># Define a route to hello function</span>
+<span class="s1">@app.route(</span><span class="s3">'/'</span><span class="s1">)</span>
+<span class="s2">def </span><span class="s1">hello():</span>
+    <span class="s2">return </span><span class="s1">render_template(</span><span class="s3">'index.html'</span><span class="s1">)</span>
+
+
+<span class="s0"># Define route for login</span>
+<span class="s1">@app.route(</span><span class="s3">'/login'</span><span class="s1">)</span>
+<span class="s2">def </span><span class="s1">login():</span>
+    <span class="s2">return </span><span class="s1">render_template(</span><span class="s3">'login.html'</span><span class="s1">)</span>
+
+
+<span class="s0"># Define route for register</span>
+<span class="s1">@app.route(</span><span class="s3">'/register'</span><span class="s1">)</span>
+<span class="s2">def </span><span class="s1">register():</span>
+    <span class="s2">return </span><span class="s1">render_template(</span><span class="s3">'register.html'</span><span class="s1">)</span>
+
+
+<span class="s0"># Authenticates the login</span>
+<span class="s1">@app.route(</span><span class="s3">'/loginAuth'</span><span class="s2">, </span><span class="s1">methods=[</span><span class="s3">'GET'</span><span class="s2">, </span><span class="s3">'POST'</span><span class="s1">])</span>
+<span class="s2">def </span><span class="s1">loginAuth():</span>
+    <span class="s0"># grabs information from the forms</span>
+    <span class="s1">email = request.form[</span><span class="s3">'email'</span><span class="s1">]</span>
+    password = request.form[<span class="s3">'password'</span><span class="s1">]</span>
+    pw = sha256(password.encode(<span class="s3">'utf-8'</span><span class="s1">)).hexdigest()  </span><span class="s0"># hashed password</span>
+
+    <span class="s1">cursor = conn.cursor()</span>
+    query = <span class="s3">'SELECT * FROM person WHERE email = %s and password = %s'</span>
+    <span class="s1">cursor.execute(query</span><span class="s2">, </span><span class="s1">(email</span><span class="s2">, </span><span class="s1">pw))</span>
+    data = cursor.fetchone()
+    cursor.close()
+    error = <span class="s2">None</span>
+    if <span class="s1">data:  </span><span class="s0"># if person has an account</span>
+        <span class="s1">session[</span><span class="s3">'email'</span><span class="s1">] = email  </span><span class="s0"># creates session for person</span>
+        <span class="s2">return </span><span class="s1">redirect(url_for(</span><span class="s3">'home'</span><span class="s1">))</span>
+    <span class="s2">else</span><span class="s1">:  </span><span class="s0"># returns an error message to the html page</span>
+        <span class="s1">error = </span><span class="s3">'Invalid email or password'</span>
+        <span class="s2">return </span><span class="s1">render_template(</span><span class="s3">'login.html'</span><span class="s2">, </span><span class="s1">error=error)</span>
+
+
+<span class="s0"># Authenticates the register</span>
+<span class="s1">@app.route(</span><span class="s3">'/registerAuth'</span><span class="s2">, </span><span class="s1">methods=[</span><span class="s3">'GET'</span><span class="s2">, </span><span class="s3">'POST'</span><span class="s1">])</span>
+<span class="s2">def </span><span class="s1">registerAuth():</span>
+    <span class="s0"># grabs information from the forms</span>
+    <span class="s1">fname = request.form[</span><span class="s3">'firstName'</span><span class="s1">]</span>
+    lname = request.form[<span class="s3">'lastName'</span><span class="s1">]</span>
+    email = request.form[<span class="s3">'email'</span><span class="s1">]</span>
+    password = request.form[<span class="s3">'password'</span><span class="s1">]</span>
+    pw = sha256(password.encode(<span class="s3">'utf-8'</span><span class="s1">)).hexdigest()  </span><span class="s0"># hashed password</span>
+
+    <span class="s1">cursor = conn.cursor()</span>
+    query = <span class="s3">'SELECT * FROM person WHERE email = %s'</span>
+    <span class="s1">cursor.execute(query</span><span class="s2">, </span><span class="s1">email)</span>
+    data = cursor.fetchone()
+    error = <span class="s2">None</span>
+    if <span class="s1">data:  </span><span class="s0"># checking to see if person already exists</span>
+        <span class="s1">error = </span><span class="s3">&quot;This person already exists&quot;</span>
+        <span class="s2">return </span><span class="s1">render_template(</span><span class="s3">'register.html'</span><span class="s2">, </span><span class="s1">error=error)</span>
+    <span class="s2">else</span><span class="s1">:</span>
+        ins = <span class="s3">'INSERT INTO person VALUES(%s, %s, %s, %s)'</span>
+        <span class="s1">cursor.execute(ins</span><span class="s2">, </span><span class="s1">(email</span><span class="s2">, </span><span class="s1">pw</span><span class="s2">, </span><span class="s1">fname</span><span class="s2">, </span><span class="s1">lname))</span>
+        conn.commit()
+        cursor.close()
+        <span class="s2">return </span><span class="s1">render_template(</span><span class="s3">'index.html'</span><span class="s1">)</span>
+
+
+@app.route(<span class="s3">'/home'</span><span class="s1">)</span>
+<span class="s2">def </span><span class="s1">home():</span>
+    email = session[<span class="s3">'email'</span><span class="s1">]</span>
+    cursor = conn.cursor();
+    query = <span class="s3">'SELECT item_id, email_post, post_time, file_path, item_name FROM contentitem WHERE is_pub = TRUE AND ' </span><span class="s1">\</span>
+            <span class="s3">'post_time &gt;= NOW() - INTERVAL 1 DAY '  </span><span class="s0"># only show public content from the last day</span>
+    <span class="s1">cursor.execute(query)</span>
+    data = cursor.fetchall()
+    cursor.close()
+    <span class="s2">return </span><span class="s1">render_template(</span><span class="s3">'home.html'</span><span class="s2">, </span><span class="s1">username=email</span><span class="s2">, </span><span class="s1">posts=data)</span>
+
+
+@app.route(<span class="s3">'/logout'</span><span class="s1">)</span>
+<span class="s2">def </span><span class="s1">logout():</span>
+    session.pop(<span class="s3">'email'</span><span class="s1">)</span>
+    <span class="s2">return </span><span class="s1">redirect(</span><span class="s3">'/'</span><span class="s1">)</span>
+
+
+app.secret_key = <span class="s3">'some key that you will never guess'</span>
+<span class="s0"># Run the app on localhost port 5000</span>
+# debug = True -&gt; you don't have to restart flask
+# for changes to go through, TURN OFF FOR PRODUCTION
+<span class="s2">if </span><span class="s1">__name__ == </span><span class="s3">&quot;__main__&quot;</span><span class="s1">:</span>
+    app.run(<span class="s3">'127.0.0.1'</span><span class="s2">, </span><span class="s4">5000</span><span class="s2">, </span><span class="s1">debug=</span><span class="s2">True</span><span class="s1">)</span>
+</pre>
+</body>
+</html>

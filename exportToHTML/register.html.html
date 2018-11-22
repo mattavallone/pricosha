@@ -1,0 +1,41 @@
+<html>
+<head>
+<title>register.html</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<style type="text/css">
+.s0 { color: #e8bf6a;}
+.s1 { color: #a9b7c6;}
+.s2 { color: #bababa;}
+.s3 { color: #a5c261;}
+</style>
+</head>
+<body bgcolor="#2b2b2b">
+<table CELLSPACING=0 CELLPADDING=5 COLS=1 WIDTH="100%" BGCOLOR="#606060" >
+<tr><td><center>
+<font face="Arial, Helvetica" color="#000000">
+register.html</font>
+</center></td></tr></table>
+<pre><span class="s0">&lt;html&gt;</span>
+&lt;head&gt;
+&lt;/head&gt;
+&lt;body&gt;
+&lt;form <span class="s2">action=</span><span class="s3">&quot;/registerAuth&quot; </span><span class="s2">method=</span><span class="s3">&quot;POST&quot;</span><span class="s0">&gt;</span>
+	&lt;input <span class="s2">type=</span><span class="s3">&quot;text&quot; </span><span class="s2">name = </span><span class="s3">&quot;firstName&quot; </span><span class="s2">placeholder=</span><span class="s3">&quot;First Name&quot; </span><span class="s2">required</span><span class="s0">/&gt; &lt;/br&gt;</span>
+	&lt;input <span class="s2">type=</span><span class="s3">&quot;text&quot; </span><span class="s2">name = </span><span class="s3">&quot;lastName&quot; </span><span class="s2">placeholder=</span><span class="s3">&quot;Last Name&quot; </span><span class="s2">required</span><span class="s0">/&gt; &lt;/br&gt;</span>
+	&lt;input <span class="s2">type=</span><span class="s3">&quot;text&quot; </span><span class="s2">name = </span><span class="s3">&quot;email&quot; </span><span class="s2">placeholder=</span><span class="s3">&quot;email&quot; </span><span class="s2">required</span><span class="s0">/&gt; &lt;/br&gt;</span>
+	&lt;input <span class="s2">type=</span><span class="s3">&quot;password&quot; </span><span class="s2">name = </span><span class="s3">&quot;password&quot; </span><span class="s2">placeholder=</span><span class="s3">&quot;password&quot; </span><span class="s2">required</span><span class="s0">/&gt;&lt;/br&gt;</span>
+	&lt;input <span class="s2">type=</span><span class="s3">&quot;submit&quot; </span><span class="s2">value = </span><span class="s3">Register </span><span class="s0">/&gt;</span>
+	<span class="s1">{% if error %}</span>
+		<span class="s0">&lt;p </span><span class="s2">class=</span><span class="s3">&quot;error&quot;</span><span class="s0">&gt;&lt;strong&gt;</span><span class="s1">Error:</span><span class="s0">&lt;/strong&gt; </span><span class="s1">{{error}}</span><span class="s0">&lt;/p&gt;</span>
+	<span class="s1">{% endif %}</span>
+<span class="s0">&lt;/form&gt;</span>
+
+&lt;a <span class="s2">href=</span><span class="s3">&quot;/&quot;</span><span class="s0">&gt;</span><span class="s1">Go back</span><span class="s0">&lt;/a&gt;</span>
+
+&lt;/body&gt;
+
+
+&lt;/html&gt;
+</pre>
+</body>
+</html>
