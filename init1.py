@@ -1,4 +1,7 @@
-# Import Flask Library
+# Matthew Avallone, Beamlak Hailemariam, Allie Haber
+# CS3083 Databases
+# Pricosha
+
 from flask import Flask, render_template, request, session, url_for, redirect
 import pymysql.cursors
 from hashlib import sha256
@@ -84,55 +87,19 @@ def registerAuth():
 
 @app.route('/home')
 def home():
-    user = session['username']
+    email = session['email']
     cursor = conn.cursor();
-    query = 'SELECT ts, blog_post FROM blog WHERE username = %s ORDER BY ts DESC'
-    cursor.execute(query, (user))
-    data = cursor.fetchall()
-    cursor.close()
-    return render_template('home.html', username=user, posts=data)
-
-
-@app.route('/post', methods=['GET', 'POST'])
-def post():
-    username = session['username']
-    cursor = conn.cursor();
-    blog = request.form['blog']
-    query = 'INSERT INTO blog (blog_post, username) VALUES(%s, %s)'
-    cursor.execute(query, (blog, username))
-    conn.commit()
-    cursor.close()
-    return redirect(url_for('home'))
-
-
-@app.route('/select_blogger')
-def select_blogger():
-    # check that user is logged in
-    # username = session['username']
-    # should throw exception if username not found
-
-    cursor = conn.cursor();
-    query = 'SELECT DISTINCT username FROM blog'
+    query = 'SELECT item_id, email_post, post_time, file_path, item_name FROM contentitem WHERE is_pub = TRUE AND ' \
+            'post_time >= NOW() - INTERVAL 1 DAY '  # only show public content from the last day
     cursor.execute(query)
     data = cursor.fetchall()
     cursor.close()
-    return render_template('select_blogger.html', user_list=data)
-
-
-@app.route('/show_posts', methods=["GET", "POST"])
-def show_posts():
-    poster = request.args['poster']
-    cursor = conn.cursor();
-    query = 'SELECT ts, blog_post FROM blog WHERE username = %s ORDER BY ts DESC'
-    cursor.execute(query, poster)
-    data = cursor.fetchall()
-    cursor.close()
-    return render_template('show_posts.html', poster_name=poster, posts=data)
+    return render_template('home.html', username=email, posts=data)
 
 
 @app.route('/logout')
 def logout():
-    session.pop('username')
+    session.pop('email')
     return redirect('/')
 
 
