@@ -4,6 +4,7 @@
 
 from flask import Flask, render_template, request, session, url_for, redirect
 import pymysql.cursors
+import datetime
 from hashlib import sha256
 
 # Initialize the app from Flask
@@ -88,9 +89,9 @@ def registerAuth():
 @app.route('/home')
 def home():
     email = session['email']
-    cursor = conn.cursor();
-    query = 'SELECT item_id, email_post, post_time, file_path, item_name FROM contentitem WHERE is_pub = TRUE AND ' \
-            'post_time >= NOW() - INTERVAL 1 DAY '  # only show public content from the last day
+    cursor = conn.cursor()
+    query = 'SELECT item_id, email_post, post_time, file_path, item_name, location FROM contentitem WHERE is_pub = ' \
+            '1 AND post_time >= NOW() - INTERVAL 1 DAY '  # only show public content posted from the last day
     cursor.execute(query)
     data = cursor.fetchall()
     cursor.close()
@@ -101,6 +102,23 @@ def home():
 def logout():
     session.pop('email')
     return redirect('/')
+
+
+@app.route('/post', methods=['GET', 'POST'])
+def post():
+    email = session['email']
+    cursor = conn.cursor()
+    item_name = request.form['item_name']
+    location = request.form['location']
+    file_path = request.form['file_path']
+    date = datetime.datetime.now()  # fetching the current time (local timezone)
+    iS_public = request.form['is_public']
+    query = 'INSERT INTO contentItem (email_post, post_time, file_path, item_name, location, is_pub) VALUES(%s, ' \
+            '%s, %s, %s, %s, %s) '
+    cursor.execute(query, (email, date, file_path, item_name, location, iS_public))
+    conn.commit()
+    cursor.close()
+    return redirect(url_for('home'))
 
 
 app.secret_key = 'some key that you will never guess'
