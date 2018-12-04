@@ -113,6 +113,10 @@ def post():
     file_path = request.form['file_path']
     date = datetime.datetime.now()  # fetching the current time (local timezone)
     iS_public = request.form['is_public']
+    if file_path == '':
+        file_path = None
+    if location == '':
+        location = None
     query = 'INSERT INTO contentItem (email_post, post_time, file_path, item_name, location, is_pub) VALUES(%s, ' \
             '%s, %s, %s, %s, %s) '
     cursor.execute(query, (email, date, file_path, item_name, location, iS_public))
