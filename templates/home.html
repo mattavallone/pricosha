@@ -4,14 +4,28 @@
 <body>
 <form action="/post" method="POST">
 	<h1>Welcome {{username}}</h1>
-    <h3>Add a Post:</h3>
+	<h3>Add a Post:</h3>
 		Post Name <input type="text" name = "item_name" required/> <br>
         Location &nbsp&nbsp&nbsp<input type="text" name = "location" /> <br>
         File Path &nbsp&nbsp&nbsp<input type="text" name = "file_path" /> <br>
-        <input id="is_pub" type="checkbox" name="is_public" value="1" > Make Public? <br>
-        <input id="is_not_pub" type='hidden' value='0' name='is_public'>
+        <input id="is_not_pub" type="checkbox" name="is_private" value="1" onchange="showDiv(this);"> Make Private? <br>
+        <input id="is_pub" type='hidden' value='0' name='is_private'>
+		<div id="friendgroup"> </div> <br>
 		<input type="submit" value = Post />
+
 </form>
+
+<script>
+	function showDiv(obj) {
+    debugger
+    if (obj.checked) {
+        document.getElementById('friendgroup').innerHTML = '<input type="text" id="friend_group" placeholder="Enter a FriendGroup Name" name = "friend_group" required/>';
+        }
+        else {
+            document.getElementById('friendgroup').innerHTML = '';
+        }
+    }
+</script>
 
 <style type="text/css">
 	table {
