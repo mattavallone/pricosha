@@ -112,14 +112,47 @@ def post():
     location = request.form['location']
     file_path = request.form['file_path']
     date = datetime.datetime.now()  # fetching the current time (local timezone)
-    iS_public = request.form['is_public']
-    if file_path == '':
+    is_private = request.form['is_private']
+    if file_path == '':  # if file_path not specified, set it to NULL
         file_path = None
-    if location == '':
+    if location == '':  # if location not specified, set it to NULL
         location = None
-    query = 'INSERT INTO contentItem (email_post, post_time, file_path, item_name, location, is_pub) VALUES(%s, ' \
-            '%s, %s, %s, %s, %s) '
-    cursor.execute(query, (email, date, file_path, item_name, location, iS_public))
+
+    if is_private == '1':
+        is_public = '0'
+
+        friend_group = request.form['friend_group']
+        checkFGname = 'SELECT fg_name FROM friendgroup WHERE owner_email = %s AND fg_name = %s'
+        cursor.execute(checkFGname, (email, friend_group))  # checking to see if friend group exists in database
+        fgname = cursor.fetchone()  # returns tuples of possible friend group names that exist in DB
+        cursor.close()
+
+        if fgname:  # if friend group name is valid for specific user, allow group to see content item
+            cursor = conn.cursor()
+            query = 'INSERT INTO contentItem (email_post, post_time, file_path, item_name, location, is_pub) VALUES(' \
+                    '%s, %s, %s, %s, %s, %s) '
+            cursor.execute(query, (email, date, file_path, item_name, location, is_public))
+            conn.commit()
+            cursor.close()
+
+            cursor = conn.cursor()
+            getItemID = 'SELECT item_id FROM contentItem WHERE item_name = %s'
+            cursor.execute(getItemID, item_name)  # retrieve correct item_id from database to use in next query
+            item_id = cursor.fetchone()
+            item_id = dict(item_id)  # need to turn tuple into dictionary for easy data access
+            cursor.close()
+
+            cursor = conn.cursor()
+            addItem2FG = 'INSERT INTO share(owner_email, fg_name, item_id) VALUES(%s, %s, %s)'
+            cursor.execute(addItem2FG, (email, friend_group, int(item_id['item_id'])))
+            # updating share preferences for friend group
+
+    else:
+        is_public = '1'
+        query = 'INSERT INTO contentItem (email_post, post_time, file_path, item_name, location, is_pub) VALUES(%s, ' \
+                '%s, %s, %s, %s, %s) '
+        cursor.execute(query, (email, date, file_path, item_name, location, is_public))
+
     conn.commit()
     cursor.close()
     return redirect(url_for('home'))
