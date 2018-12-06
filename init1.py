@@ -95,7 +95,12 @@ def home():
     cursor.execute(query)
     data = cursor.fetchall()
     cursor.close()
-    return render_template('home.html', username=email, posts=data)
+    cursor = conn.cursor()
+    fgnames = 'SELECT fg_name FROM friendgroup WHERE owner_email = %s'
+    cursor.execute(fgnames, email)  # checking to see if friend group exists in database
+    fg = cursor.fetchall()  # returns tuples of possible friend group names that exist in DB
+    cursor.close()
+    return render_template('home.html', username=email, posts=data, fg=fg)
 
 
 @app.route('/logout')
@@ -122,30 +127,25 @@ def post():
         is_public = '0'
 
         friend_group = request.form['friend_group']
-        checkFGname = 'SELECT fg_name FROM friendgroup WHERE owner_email = %s AND fg_name = %s'
-        cursor.execute(checkFGname, (email, friend_group))  # checking to see if friend group exists in database
-        fgname = cursor.fetchone()  # returns tuples of possible friend group names that exist in DB
+
+        cursor = conn.cursor()
+        query = 'INSERT INTO contentItem (email_post, post_time, file_path, item_name, location, is_pub) VALUES(' \
+                '%s, %s, %s, %s, %s, %s) '
+        cursor.execute(query, (email, date, file_path, item_name, location, is_public))
+        conn.commit()
         cursor.close()
 
-        if fgname:  # if friend group name is valid for specific user, allow group to see content item
-            cursor = conn.cursor()
-            query = 'INSERT INTO contentItem (email_post, post_time, file_path, item_name, location, is_pub) VALUES(' \
-                    '%s, %s, %s, %s, %s, %s) '
-            cursor.execute(query, (email, date, file_path, item_name, location, is_public))
-            conn.commit()
-            cursor.close()
+        cursor = conn.cursor()
+        getItemID = 'SELECT item_id FROM contentItem WHERE item_name = %s'
+        cursor.execute(getItemID, item_name)  # retrieve correct item_id from database to use in next query
+        item_id = cursor.fetchone()
+        item_id = dict(item_id)  # need to turn tuple into dictionary for easy data access
+        cursor.close()
 
-            cursor = conn.cursor()
-            getItemID = 'SELECT item_id FROM contentItem WHERE item_name = %s'
-            cursor.execute(getItemID, item_name)  # retrieve correct item_id from database to use in next query
-            item_id = cursor.fetchone()
-            item_id = dict(item_id)  # need to turn tuple into dictionary for easy data access
-            cursor.close()
-
-            cursor = conn.cursor()
-            addItem2FG = 'INSERT INTO share(owner_email, fg_name, item_id) VALUES(%s, %s, %s)'
-            cursor.execute(addItem2FG, (email, friend_group, int(item_id['item_id'])))
-            # updating share preferences for friend group
+        cursor = conn.cursor()
+        addItem2FG = 'INSERT INTO share(owner_email, fg_name, item_id) VALUES(%s, %s, %s)'
+        cursor.execute(addItem2FG, (email, friend_group, int(item_id['item_id'])))
+        # updating share preferences for friend group
 
     else:
         is_public = '1'
