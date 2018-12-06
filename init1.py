@@ -97,8 +97,9 @@ def home():
     cursor.close()
     cursor = conn.cursor()
     fgnames = 'SELECT fg_name FROM friendgroup WHERE owner_email = %s'
-    cursor.execute(fgnames, email)  # checking to see if friend group exists in database
+    cursor.execute(fgnames, email)  # retrieving friend groups existing in database
     fg = cursor.fetchall()  # returns tuples of possible friend group names that exist in DB
+
     cursor.close()
     return render_template('home.html', username=email, posts=data, fg=fg)
 
@@ -126,7 +127,7 @@ def post():
     if is_private == '1':
         is_public = '0'
 
-        friend_group = request.form['friend_group']
+        friend_group = request.form.getlist('friend_group')
 
         cursor = conn.cursor()
         query = 'INSERT INTO contentItem (email_post, post_time, file_path, item_name, location, is_pub) VALUES(' \
@@ -142,18 +143,19 @@ def post():
         item_id = dict(item_id)  # need to turn tuple into dictionary for easy data access
         cursor.close()
 
-        cursor = conn.cursor()
+        cursor = conn.cursor()  # updating share preferences for friend group
         addItem2FG = 'INSERT INTO share(owner_email, fg_name, item_id) VALUES(%s, %s, %s)'
-        cursor.execute(addItem2FG, (email, friend_group, int(item_id['item_id'])))
-        # updating share preferences for friend group
+        for fg_name in friend_group:
+            cursor.execute(addItem2FG, (email, fg_name, int(item_id['item_id'])))
+            conn.commit()
 
     else:
         is_public = '1'
         query = 'INSERT INTO contentItem (email_post, post_time, file_path, item_name, location, is_pub) VALUES(%s, ' \
                 '%s, %s, %s, %s, %s) '
         cursor.execute(query, (email, date, file_path, item_name, location, is_public))
+        conn.commit()
 
-    conn.commit()
     cursor.close()
     return redirect(url_for('home'))
 
