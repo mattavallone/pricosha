@@ -12,9 +12,9 @@ app = Flask(__name__)
 
 # Configure MySQL
 conn = pymysql.connect(host='localhost',
-                       port=3306,
+                       port=8889,
                        user='root',
-                       password='',
+                       password='root',
                        db='pricosha',
                        charset='utf8mb4',
                        cursorclass=pymysql.cursors.DictCursor)
@@ -36,7 +36,6 @@ def login():
 @app.route('/register')
 def register():
     return render_template('register.html')
-
 
 # Authenticates the login
 @app.route('/loginAuth', methods=['GET', 'POST'])
@@ -114,10 +113,38 @@ def tagPage():
 
     return render_template('tagPage.html', tagsPending=data, tagsApproved=data2)
 
+
 @app.route('/logout')
 def logout():
     session.pop('email')
     return redirect('/')
+
+
+@app.route('/addGroup', methods=['POST'])
+def addGroup():
+    owner_email = session['email']
+    fg_name = request.form['group_name']
+    description = request.form['description']
+    if description == '':  # if description not specified, set it to NULL
+        description = None
+    cursor = conn.cursor()
+    check_created = 'SELECT * FROM FriendGroup WHERE owner_email = %s AND fg_name = %s'
+    already_created = cursor.execute(check_created, (owner_email, fg_name))
+    cursor.close()
+    error = None
+    if already_created:
+        error = "This group already exists"
+        return redirect(url_for('home', error=error))
+    else:
+        cursor = conn.cursor()
+        query1 = 'INSERT INTO FriendGroup(owner_email, fg_name, description) VALUES (%s, %s, %s)'
+        query2 = 'INSERT INTO Belong(email, owner_email, fg_name) VALUES (%s, %s, %s)'
+        cursor.execute(query1, (owner_email, fg_name, description))
+        cursor.execute(query2, (owner_email, owner_email, fg_name))
+        conn.commit()
+        cursor.close()
+
+    return redirect(url_for('home'))
 
 
 @app.route('/post', methods=['GET', 'POST'])

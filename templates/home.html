@@ -73,7 +73,12 @@
 	</tr>
 {% endfor %}
 </table>
-
+<form action="/addGroup" method="POST">
+<h3> Create a Friend Group</h3>
+<input type="text" id="friend_group" placeholder="Enter a new Group Name" name = "group_name" required/><br>
+<input type="text" id="friend_group" placeholder="Give a description" name = "description"><br>
+<input type="submit" value = Create />
+</form>
 <br>
 <a href="/tagPage">My Tags</a> <br>
 <a href="/logout">Logout</a>
