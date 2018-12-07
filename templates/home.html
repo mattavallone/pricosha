@@ -57,17 +57,25 @@
 
 {% for line in posts %}
 	<tr>
+		<form action="/tag" method="POST">
 		<td>{{line.item_id}}</td>
 		<td>{{line.email_post}}</td>
 		<td>{{line.post_time}}</td>
 		<td>{{line.file_path}}</td>
 		<td>{{line.item_name}}</td>
         <td>{{line.location}}</td>
+		<td> <div id="tagBox"> <input type="text" id="tagged" placeholder="Enter a Person to tag" name = "tagged" required/> <input type="hidden" class="form-control" name="item_id" value="{{line.item_id}}"> </div> <input type="submit" value = Tag /> </td>
+		{% if error %}
+			<p class="error"><strong>Error:</strong> {{error1}}</p>
+		{% endif %}
+		</form>
+
 	</tr>
 {% endfor %}
 </table>
 
 <br>
+<a href="/tagPage">My Tags</a> <br>
 <a href="/logout">Logout</a>
 <br>
 </body>
