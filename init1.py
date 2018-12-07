@@ -95,13 +95,27 @@ def home():
     cursor.execute(query)
     data = cursor.fetchall()
     cursor.close()
+
     cursor = conn.cursor()
     fgnames = 'SELECT fg_name FROM friendgroup WHERE owner_email = %s'
     cursor.execute(fgnames, email)  # retrieving friend groups existing in database
     fg = cursor.fetchall()  # returns tuples of possible friend group names that exist in DB
-
     cursor.close()
-    return render_template('home.html', username=email, posts=data, fg=fg)
+
+    cursor = conn.cursor()
+    createFGview = 'CREATE VIEW FG AS (SELECT fg_name FROM belong WHERE belong.email = %s); '
+    cursor.execute(createFGview, email)
+    conn.commit()
+    locdata = 'SELECT location, email_post AS Email FROM contentItem WHERE location IS NOT NULL AND ' \
+              'contentItem.email_post IN (SELECT DISTINCT email FROM belong NATURAL JOIN FG WHERE email != %s)AND ' \
+              'location IN (SELECT DISTINCT location FROM contentItem WHERE email_post = %s); '
+    cursor.execute(locdata, (email,email))
+    loc = cursor.fetchall()
+    dropFGview = 'DROP VIEW FG;'
+    cursor.execute(dropFGview)
+    conn.commit()
+    cursor.close()
+    return render_template('home.html', username=email, posts=data, fg=fg, locdata=loc)
 
 
 @app.route('/logout')
