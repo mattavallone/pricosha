@@ -60,6 +60,21 @@
 </table>
 
 <br>
+
+<h3>Friends in Similar Locations:</h3>
+<table>
+	<th>location</th>
+	<th>Email</th>
+
+{% for line in locdata %}
+	<tr>
+		<td>{{line.location}}</td>
+		<td>{{line.Email}}</td>
+	</tr>
+{% endfor %}
+</table>
+
+<br>
 <a href="/logout">Logout</a>
 <br>
 </body>
