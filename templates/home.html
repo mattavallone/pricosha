@@ -9,12 +9,11 @@
         <input type="text" name = "location" placeholder="Location"/> <br>
         <input type="text" name = "file_path" placeholder="File Path"/> <br>
         <input id="is_not_pub" type="checkbox" name="is_private" value="1" >
-		Make Private? If yes, please pick a Friend Group<br>
+		Make Private? <br> If yes, please pick Friend Group(s): <br>
         <input id="is_pub" type='hidden' value='0' name='is_private'>
-		<select name="friend_group">
+		<select name="friend_group" multiple size="len(fg)">
 			{% for line in fg %}
     			<option value="{{line.fg_name}}">{{line.fg_name}}</option>;
-				<!--update this to checkboxes to allow for multiple submissions-->
 			{% endfor %}
    		</select><br>
 		<input type="submit" value = Post />
