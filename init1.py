@@ -23,7 +23,13 @@ conn = pymysql.connect(host='localhost',
 # Define a route to hello function
 @app.route('/')
 def hello():
-    return render_template('index.html')
+    cursor = conn.cursor()
+    query = 'SELECT item_id, email_post, post_time, file_path, item_name, location FROM contentitem WHERE is_pub = ' \
+            '1 AND post_time >= NOW() - INTERVAL 1 DAY '  # only show public content posted from the last day
+    cursor.execute(query)
+    data = cursor.fetchall()
+    cursor.close()
+    return render_template('index.html', publicposts=data)
 
 
 # Define route for login
@@ -103,6 +109,12 @@ def home():
     cursor.close()
 
     cursor = conn.cursor()
+    comments = 'SELECT commenter, item_id, comment FROM comment WHERE commenter = %s AND is_public = 1'
+    cursor.execute(comments, email)  # retrieving friend groups existing in database
+    cm = cursor.fetchall()  # returns tuples of possible friend group names that exist in DB
+    cursor.close()
+
+    cursor = conn.cursor()
     createFGview = 'CREATE VIEW FG AS (SELECT fg_name FROM belong WHERE belong.email = %s); '
     cursor.execute(createFGview, email)
     conn.commit()
@@ -115,7 +127,7 @@ def home():
     cursor.execute(dropFGview)
     conn.commit()
     cursor.close()
-    return render_template('home.html', username=email, posts=data, fg=fg, locdata=loc)
+    return render_template('home.html', username=email, posts=data, fg=fg, locdata=loc, comments = cm)
 
 
 @app.route('/logout')
@@ -170,6 +182,20 @@ def post():
         cursor.execute(query, (email, date, file_path, item_name, location, is_public))
         conn.commit()
 
+    cursor.close()
+    return redirect(url_for('home'))
+
+
+@app.route('/comment', methods=['GET', 'POST'])
+def comment():
+    email = session['email']
+    cursor = conn.cursor()
+    com = request.form['comment']
+    content_id = request.form['content_ids']
+    is_pub = request.form['is_public']
+    addComment = 'INSERT INTO comment(commenter, item_id, comment, is_public) VALUES(%s, %s, %s, %s)'
+    cursor.execute(addComment, (email, content_id, com, is_pub))
+    conn.commit()
     cursor.close()
     return redirect(url_for('home'))
 
