@@ -43,7 +43,6 @@ def login():
 def register():
     return render_template('register.html')
 
-
 # Authenticates the login
 @app.route('/loginAuth', methods=['GET', 'POST'])
 def loginAuth():
@@ -121,7 +120,7 @@ def home():
     locdata = 'SELECT location, email_post AS Email FROM contentItem WHERE location IS NOT NULL AND ' \
               'contentItem.email_post IN (SELECT DISTINCT email FROM belong NATURAL JOIN FG WHERE email != %s)AND ' \
               'location IN (SELECT DISTINCT location FROM contentItem WHERE email_post = %s); '
-    cursor.execute(locdata, (email,email))
+    cursor.execute(locdata, (email, email))
     loc = cursor.fetchall()
     dropFGview = 'DROP VIEW FG;'
     cursor.execute(dropFGview)
@@ -130,10 +129,55 @@ def home():
     return render_template('home.html', username=email, posts=data, fg=fg, locdata=loc, comments = cm)
 
 
+@app.route('/tagPage')
+def tagPage():
+    email = session['email']
+    cursor = conn.cursor()
+    query = 'SELECT item_id, email_tagger, tagtime FROM Tag WHERE email_tagged = %s AND status = %s'
+    cursor.execute(query, (email, 'false'))
+    data = cursor.fetchall()
+    cursor.close()
+    cursor = conn.cursor()
+    
+    query = 'SELECT item_id, email_tagger, tagtime FROM Tag WHERE email_tagged = %s AND status = %s'
+    cursor.execute(query, (email, 'true'))
+    data2 = cursor.fetchall()
+    cursor.close()
+
+    return render_template('tagPage.html', tagsPending=data, tagsApproved=data2)
+
+
 @app.route('/logout')
 def logout():
     session.pop('email')
     return redirect('/')
+
+
+@app.route('/addGroup', methods=['POST'])
+def addGroup():
+    owner_email = session['email']
+    fg_name = request.form['group_name']
+    description = request.form['description']
+    if description == '':  # if description not specified, set it to NULL
+        description = None
+    cursor = conn.cursor()
+    check_created = 'SELECT * FROM FriendGroup WHERE owner_email = %s AND fg_name = %s'
+    already_created = cursor.execute(check_created, (owner_email, fg_name))
+    cursor.close()
+    error = None
+    if already_created:
+        error = "This group already exists"
+        return redirect(url_for('home', error=error))
+    else:
+        cursor = conn.cursor()
+        query1 = 'INSERT INTO FriendGroup(owner_email, fg_name, description) VALUES (%s, %s, %s)'
+        query2 = 'INSERT INTO Belong(email, owner_email, fg_name) VALUES (%s, %s, %s)'
+        cursor.execute(query1, (owner_email, fg_name, description))
+        cursor.execute(query2, (owner_email, owner_email, fg_name))
+        conn.commit()
+        cursor.close()
+
+    return redirect(url_for('home'))
 
 
 @app.route('/post', methods=['GET', 'POST'])
@@ -186,6 +230,51 @@ def post():
     return redirect(url_for('home'))
 
 
+@app.route('/tag', methods=['GET', 'POST'])
+def tag():
+    cursor = conn.cursor()
+    email_tagged = request.form['tagged']
+    item_id = request.form['item_id']
+    check_tagged = 'SELECT email FROM Person WHERE email = %s'
+    cursor.execute(check_tagged, email_tagged)  # checking to see if tagged exists in database
+    possible_tagged = cursor.fetchone()  # returns tuples of possible emails to tag that exist in DB
+    cursor.close()
+    email_tagger = session['email']
+    tagtime = datetime.datetime.now()
+    cursor = conn.cursor()
+    check_duplicate = 'SELECT * FROM Tag WHERE email_tagged = %s AND email_tagger = %s AND item_id =%s'
+    duplicate = cursor.execute(check_duplicate, (email_tagged, email_tagger, item_id))
+    cursor.close()
+    cursor = conn.cursor()
+    valid_view = 'SELECT item_id FROM ContentItem WHERE item_id = %s AND (is_pub OR item_id IN (SELECT item_id FROM SHARE JOIN Belong ON SHARE.owner_email = Belong.owner_email AND Share.fg_name = Belong.fg_name WHERE Belong.email = %s))'
+    allowed_to_view = cursor.execute(valid_view, (item_id, email_tagged))
+    cursor.close()
+    error1 = None
+    if duplicate:
+        print("Hello world")
+        error1 = "The tag has already been done"
+
+        return redirect(url_for('home', error=error1))
+    else:
+        if possible_tagged and allowed_to_view:
+            if email_tagged == email_tagger:
+                cursor = conn.cursor()
+                query = 'INSERT INTO Tag (email_tagged, email_tagger, item_id, status, tagtime) VALUES(%s, %s, %s, %s, %s) '
+                cursor.execute(query, (email_tagged, email_tagger, item_id, 'true', tagtime))
+            else:
+                cursor = conn.cursor()
+                query = 'INSERT INTO Tag (email_tagged, email_tagger, item_id, status, tagtime) VALUES(%s, %s, %s, %s, %s) '
+                cursor.execute(query, (email_tagged, email_tagger, item_id, 'false', tagtime))
+        else:
+            error1 = "The person you tagged doesn't exist"
+            print("Hello ")
+            session
+            return redirect(url_for('home', error=error1))
+    conn.commit()
+    cursor.close()
+    return redirect(url_for('home'))
+
+
 @app.route('/comment', methods=['GET', 'POST'])
 def comment():
     email = session['email']
@@ -198,6 +287,30 @@ def comment():
     conn.commit()
     cursor.close()
     return redirect(url_for('home'))
+  
+@app.route('/tagChoice', methods=['GET', 'POST'])
+def tagChoice():
+    email_tagged = session['email']
+    option = request.form['action']
+    email_tagger = request.form['email_tagger']
+    item_id = request.form['item_id']
+    cursor = conn.cursor()
+    if option=="Accept":
+        x = True
+    elif option=="Decline":
+        x = False
+    if x:
+        query = 'UPDATE Tag SET status = %s WHERE item_id = %s AND email_tagger = %s AND email_tagged = %s'
+        cursor.execute(query, ('true', item_id, email_tagger, email_tagged))
+        conn.commit()
+        cursor.close()
+    else:
+        cursor = conn.cursor()
+        query = 'DELETE FROM Tag WHERE item_id = %s AND email_tagger = %s AND email_tagged = %s'
+        cursor.execute(query, (item_id, email_tagger, email_tagged))
+        conn.commit()
+        cursor.close()
+    return redirect(url_for('tagPage'))
 
 
 app.secret_key = 'some key that you will never guess'
