@@ -23,8 +23,13 @@ conn = pymysql.connect(host='localhost',
 # Define a route to hello function
 @app.route('/')
 def hello():
-    return render_template('index.html')
-
+    cursor = conn.cursor()
+    query = 'SELECT item_id, email_post, post_time, file_path, item_name, location FROM contentitem WHERE is_pub = ' \
+            '1 AND post_time >= NOW() - INTERVAL 1 DAY '  # only show public content posted from the last day
+    cursor.execute(query)
+    data = cursor.fetchall()
+    cursor.close()
+    return render_template('index.html', publicposts=data)
 
 # Define route for login
 @app.route('/login')
