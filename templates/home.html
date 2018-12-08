@@ -19,6 +19,20 @@
 		<input type="submit" value = Post />
 </form>
 
+<form action="/comment" method="POST">
+	<h3>Add a Comment:</h3>
+	Content Item Id: <select name="content_ids">
+			{% for line in posts %}
+    			<option value="{{line.item_id}}">{{line.item_id}}</option>;
+			{% endfor %}
+   		</select><br>
+	<input id="pub_comment" type="checkbox" name="is_public" value="1" > Make Public? <br>
+        <input id="priv_comment" type='hidden' value='0' name='is_public'>
+	<input type="text" name="comment" placeholder="Enter a Comment" maxlength="256"required/> <br>
+	<input type="submit" value = "Add Comment" />
+
+</form>
+
 <style type="text/css">
 	table {
     border-collapse: collapse;
@@ -60,7 +74,22 @@
 </table>
 
 <br>
+<h3>Public Comments:</h3>
+<table>
+	<th>commenter</th>
+	<th>item_id</th>
+	<th>comment</th>
 
+{% for line in comments %}
+	<tr>
+		<td>{{line.commenter}}</td>
+		<td>{{line.item_id}}</td>
+		<td>{{line.comment}}</td>
+	</tr>
+{% endfor %}
+</table>
+
+<br>
 <h3>Friends in Similar Locations:</h3>
 <table>
 	<th>location</th>
