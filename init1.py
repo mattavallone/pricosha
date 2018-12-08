@@ -95,8 +95,10 @@ def registerAuth():
 def home():
     email = session['email']
     cursor = conn.cursor()
-    query = 'SELECT item_id, email_post, post_time, file_path, item_name, location FROM contentitem WHERE is_pub = ' \
-            '1 AND post_time >= NOW() - INTERVAL 1 DAY '  # only show public content posted from the last day
+    query = "SELECT item_id, email_post, post_time, file_path, item_name, location FROM contentitem WHERE contentitem.is_pub = 1 " \
+            "OR contentitem.email_post= '%s' OR contentitem.item_id in (SELECT item_id FROM share WHERE '%s' in" \
+            "(SELECT belong.email FROM belong WHERE share.fg_name = belong.fg_name) OR '%s' in (SELECT owner_email FROM" \
+            "friendgroup WHERE share.fg_name = fg_name )) AND post_time >= NOW() - INTERVAL 1 DAY ORDER BY post_time desc"
     cursor.execute(query)
     data = cursor.fetchall()
     cursor.close()
@@ -172,10 +174,10 @@ def add_friend():
     return render_template('editFriends.html', friendgroup=data)
 
 
-@app.route('/friendAuth', methods=['GET', 'POST'])
-def friendAuth():
+@app.route('/friendCtrl', methods=['GET', 'POST'])
+def friendCtrl():
     #Get info of the new friend
-    username = session['email'] #current user email
+    owner = session['email'] #current user email
     friend_fname = request.form['friend_fname']
     friend_lname = request.form['friend_lname']
     fg_name = request.form['fg']
@@ -183,7 +185,7 @@ def friendAuth():
     #Get user's friend in FriendGroup
     cursor = conn.cursor()
     query = 'SELECT fg_name, description FROM friendgroup WHERE owner_email = %s'
-    cursor.execute(query, (username))
+    cursor.execute(query, (owner))
     fg_data = cursor.fetchall()
 
     # Check new Friend with existing list of Friends within the group
@@ -194,15 +196,16 @@ def friendAuth():
     if (not exist_data):
         msg = "This user does not exist."
         return render_template('editFriends.html', friendgroup=fg_data, msg=msg)
-
+    #Gets the email of person with the given f&l_name
     query = 'SELECT email FROM person WHERE fname = %s AND lname = %s'
     cursor.execute(query, (friend_fname, friend_lname))
     email_data = cursor.fetchone()
-    email = email_data['email']
-
-    query = 'SELECT email FROM belong WHERE email = %s'
-    cursor.execute(query, (email))
+    newFreindEmail = email_data['email']
+    #Gets all the emails associated with the current user email
+    query = 'SELECT email FROM belong WHERE email = %s AND fg_name = %s'
+    cursor.execute(query, (newFreindEmail, fg_name))
     data = cursor.fetchone()
+
 
     msg = None
     buttonClicked = request.form['buttonClicked']
@@ -212,21 +215,24 @@ def friendAuth():
             return render_template('editFriends.html', friendgroup=fg_data, msg=msg)
         else:
             ins = 'INSERT INTO belong VALUES(%s, %s, %s)'
-            cursor.execute(ins, (email, username, fg_name))
+            cursor.execute(ins, (newFreindEmail, owner, fg_name))
             conn.commit()
             cursor.close()
             msg = friend_fname + " has been added"
             return render_template('editFriends.html', friendgroup=fg_data, msg=msg)
     elif buttonClicked == "Remove":
-        dele = 'DELETE FROM belong WHERE email = %s AND owner_email = %s AND fg_name = %s'
-        cursor.execute(dele, (email, username, fg_name))
+        if (not data):
+            msg = "This person is not in this FriendGroup"
+            return render_template('editFriends.html', friendgroup=fg_data, msg=msg)
+        dele1 = 'DELETE FROM belong WHERE email = %s AND owner_email = %s AND fg_name = %s'
+        cursor.execute(dele1, (newFreindEmail, owner, fg_name))
+        dele2 = 'DELETE FROM tag WHERE email_tagged = %s AND email_tagger = %s'
+        cursor.execute(dele2, (newFreindEmail, owner))
         conn.commit()
         cursor.close()
         msg = friend_fname + " has been removed from FriendGroup " + fg_name
         return render_template('editFriends.html', friendgroup=fg_data, msg=msg)
 
-
-@app.route('/post', methods=['GET', 'POST'])
 @app.route('/post', methods=['GET', 'POST'])
 def post():
     email = session['email']
