@@ -108,7 +108,7 @@ def home():
     cursor.close()
 
     cursor = conn.cursor()
-    comments = 'SELECT commenter, item_id, comment FROM comment WHERE commenter = %s AND is_public = 1'
+    comments = 'SELECT commenter, item_id, text FROM comments WHERE commenter = %s AND is_public = 1'
     cursor.execute(comments, email)  # retrieving friend groups existing in database
     cm = cursor.fetchall()  # returns tuples of possible friend group names that exist in DB
     cursor.close()
@@ -161,6 +161,7 @@ def addGroup():
 
     return redirect(url_for('home'))
 
+
 @app.route('/editFriends', methods=["GET", "POST"])
 def add_friend():
     user = session['email']
@@ -174,16 +175,16 @@ def add_friend():
 
 @app.route('/friendAuth', methods=['GET', 'POST'])
 def friendAuth():
-    #Get info of the new friend
-    username = session['email'] #current user email
+    # Get info of the new friend
+    username = session['email']  # current user email
     friend_fname = request.form['friend_fname']
     friend_lname = request.form['friend_lname']
     fg_name = request.form['fg']
 
-    #Get user's friend in FriendGroup
+    # Get user's friend in FriendGroup
     cursor = conn.cursor()
     query = 'SELECT fg_name, description FROM friendgroup WHERE owner_email = %s'
-    cursor.execute(query, (username))
+    cursor.execute(query, username)
     fg_data = cursor.fetchall()
 
     # Check new Friend with existing list of Friends within the group
@@ -191,7 +192,7 @@ def friendAuth():
     cursor.execute(query, (friend_fname, friend_lname))
     exist_data = cursor.fetchone()
 
-    if (not exist_data):
+    if not exist_data:
         msg = "This user does not exist."
         return render_template('editFriends.html', friendgroup=fg_data, msg=msg)
 
@@ -207,7 +208,7 @@ def friendAuth():
     msg = None
     buttonClicked = request.form['buttonClicked']
     if buttonClicked == "Add":
-        if (data):
+        if data:
             msg = "This person is already in this FriendGroup"
             return render_template('editFriends.html', friendgroup=fg_data, msg=msg)
         else:
@@ -226,7 +227,6 @@ def friendAuth():
         return render_template('editFriends.html', friendgroup=fg_data, msg=msg)
 
 
-@app.route('/post', methods=['GET', 'POST'])
 @app.route('/post', methods=['GET', 'POST'])
 def post():
     email = session['email']
@@ -278,14 +278,14 @@ def post():
 
 
 # Add Comment Feature
-@app.route('/comment')
+@app.route('/comments', methods=['GET', 'POST'])
 def comment():
     email = session['email']
     cursor = conn.cursor()
     com = request.form['comment']
     content_id = request.form['content_ids']
     is_pub = request.form['is_public']
-    addComment = 'INSERT INTO comment(commenter, item_id, comment, is_public) VALUES(%s, %s, %s, %s)'
+    addComment = 'INSERT INTO comments(commenter, item_id, text, is_public) VALUES(%s, %s, %s, %s)'
     cursor.execute(addComment, (email, content_id, com, is_pub))
     conn.commit()
     cursor.close()
@@ -377,6 +377,7 @@ def tagChoice():
         conn.commit()
         cursor.close()
     return redirect(url_for('tagPage'))
+
 
 app.secret_key = 'some key that you will never guess'
 # Run the app on localhost port 5000

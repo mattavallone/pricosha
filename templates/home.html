@@ -20,7 +20,7 @@
 
 </form>
 
-<form action="/comment" method="POST">
+<form action="/comments" method="POST">
 	<h3>Add a Comment:</h3>
 	Content Item Id: <select name="content_ids">
 			{% for line in posts %}
@@ -29,7 +29,7 @@
    		</select><br>
 	<input id="pub_comment" type="checkbox" name="is_public" value="1" > Make Public? <br>
         <input id="priv_comment" type='hidden' value='0' name='is_public'>
-	<input type="text" name="comment" placeholder="Enter a Comment" maxlength="256"required/> <br>
+	<input type="text" name="comment" placeholder="Enter a Comment" maxlength="256" required/> <br>
 	<input type="submit" value = "Add Comment" />
 
 </form>
@@ -37,7 +37,7 @@
 <form action="/addGroup" method="POST">
 	<h3> Create a Friend Group: </h3>
 		<input type="text" id="friend_group" placeholder="Enter a new Group Name" name = "group_name" required/><br>
-		<input type="text" id="friend_group" placeholder="Give a description" name = "description"><br>
+		<input type="text" id="friend_group2" placeholder="Give a description" name = "description"><br>
 		<input type="submit" value = Create />
 
 </form>
@@ -81,9 +81,9 @@
 		<td>{{line.item_name}}</td>
         <td>{{line.location}}</td>
 		<td> <div id="tagBox"> <input type="text" id="tagged" placeholder="Enter a Person to tag" name = "tagged" required/> <input type="hidden" class="form-control" name="item_id" value="{{line.item_id}}"> </div> <input type="submit" value = Tag /> </td>
-		{% if error %}
-			<p class="error"><strong>Error:</strong> {{error1}}</p>
-		{% endif %}
+			{% if error %}
+				<p class="error"><strong>Error:</strong> {{error1}}</p>
+			{% endif %}
 		</form>
 	</tr>
 	{% endfor %}
