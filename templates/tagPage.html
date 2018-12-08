@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Tag</title>
+	<h1>Tag Information</h1> <br>
+</head>
+<body>
+<style type="text/css">
+	table {
+    border-collapse: collapse;
+    width: 50%;
+    }
+
+    th, td {
+    text-align: left;
+    padding: 8px;
+    }
+
+    tr:nth-child(even){background-color: #f2f2f2}
+
+    th {
+    background-color: #2313C7;
+    color: white;
+    }
+</style>
+
+<h3>Tags Pending Approval:</h3>
+<table>
+	<th>item_id</th>
+	<th>Tagger</th>
+	<th>Tag time</th>
+
+{% for line in tagsPending %}
+	<tr>
+	<form action="/tagChoice" method = "POST">
+		<td>{{line.item_id}}</td>
+		<td>{{line.email_tagger}}</td>
+		<td>{{line.tagtime}}</td>
+		<td> <button name = "action" type = 'submit' value="Accept"> Accept </button> <input type="hidden" class="form-control" name="item_id" value="{{line.item_id}}"><input type="hidden" class="form-control" name="email_tagger" value="{{line.email_tagger}}"></td>
+		<td> <button name = "action" type = 'submit' value="Decline"> Decline </button> </td>
+	</form>
+    </tr>
+{% endfor %}
+</table>
+<h3>Approved Tags:</h3>
+<table>
+	<th>item_id</th>
+	<th>Tagger</th>
+	<th>Tag time</th>
+
+{% for line in tagsApproved %}
+	<tr>
+		<td>{{line.item_id}}</td>
+		<td>{{line.email_tagger}}</td>
+		<td>{{line.tagtime}}</td>
+    </tr>
+{% endfor %}
+</table>
+<br>
+<a href="/home">Home</a>
+</body>
+</html>
