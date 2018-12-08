@@ -135,6 +135,98 @@ def logout():
     return redirect('/')
 
 
+@app.route('/addGroup', methods=['POST'])
+def addGroup():
+    owner_email = session['email']
+    fg_name = request.form['group_name']
+    description = request.form['description']
+    if description == '':  # if description not specified, set it to NULL
+        description = None
+    cursor = conn.cursor()
+    check_created = 'SELECT * FROM FriendGroup WHERE owner_email = %s AND fg_name = %s'
+    already_created = cursor.execute(check_created, (owner_email, fg_name))
+    cursor.close()
+    error = None
+    if already_created:
+        error = "This group already exists"
+        return redirect(url_for('home', error=error))
+    else:
+        cursor = conn.cursor()
+        query1 = 'INSERT INTO FriendGroup(owner_email, fg_name, description) VALUES (%s, %s, %s)'
+        query2 = 'INSERT INTO Belong(email, owner_email, fg_name) VALUES (%s, %s, %s)'
+        cursor.execute(query1, (owner_email, fg_name, description))
+        cursor.execute(query2, (owner_email, owner_email, fg_name))
+        conn.commit()
+        cursor.close()
+
+    return redirect(url_for('home'))
+
+@app.route('/editFriends', methods=["GET", "POST"])
+def add_friend():
+    user = session['email']
+    cursor = conn.cursor();
+    query = 'SELECT fg_name, description FROM friendgroup WHERE owner_email = %s'
+    cursor.execute(query, (user))
+    data = cursor.fetchall()
+    cursor.close()
+    return render_template('editFriends.html', friendgroup=data)
+
+
+@app.route('/friendAuth', methods=['GET', 'POST'])
+def friendAuth():
+    #Get info of the new friend
+    username = session['email'] #current user email
+    friend_fname = request.form['friend_fname']
+    friend_lname = request.form['friend_lname']
+    fg_name = request.form['fg']
+
+    #Get user's friend in FriendGroup
+    cursor = conn.cursor()
+    query = 'SELECT fg_name, description FROM friendgroup WHERE owner_email = %s'
+    cursor.execute(query, (username))
+    fg_data = cursor.fetchall()
+
+    # Check new Friend with existing list of Friends within the group
+    query = 'SELECT fname, lname FROM person WHERE fname = %s AND lname = %s'
+    cursor.execute(query, (friend_fname, friend_lname))
+    exist_data = cursor.fetchone()
+
+    if (not exist_data):
+        msg = "This user does not exist."
+        return render_template('editFriends.html', friendgroup=fg_data, msg=msg)
+
+    query = 'SELECT email FROM person WHERE fname = %s AND lname = %s'
+    cursor.execute(query, (friend_fname, friend_lname))
+    email_data = cursor.fetchone()
+    email = email_data['email']
+
+    query = 'SELECT email FROM belong WHERE email = %s'
+    cursor.execute(query, (email))
+    data = cursor.fetchone()
+
+    msg = None
+    buttonClicked = request.form['buttonClicked']
+    if buttonClicked == "Add":
+        if (data):
+            msg = "This person is already in this FriendGroup"
+            return render_template('editFriends.html', friendgroup=fg_data, msg=msg)
+        else:
+            ins = 'INSERT INTO belong VALUES(%s, %s, %s)'
+            cursor.execute(ins, (email, username, fg_name))
+            conn.commit()
+            cursor.close()
+            msg = friend_fname + " has been added"
+            return render_template('editFriends.html', friendgroup=fg_data, msg=msg)
+    elif buttonClicked == "Remove":
+        dele = 'DELETE FROM belong WHERE email = %s AND owner_email = %s AND fg_name = %s'
+        cursor.execute(dele, (email, username, fg_name))
+        conn.commit()
+        cursor.close()
+        msg = friend_fname + " has been removed from FriendGroup " + fg_name
+        return render_template('editFriends.html', friendgroup=fg_data, msg=msg)
+
+
+@app.route('/post', methods=['GET', 'POST'])
 @app.route('/post', methods=['GET', 'POST'])
 def post():
     email = session['email']
@@ -216,7 +308,7 @@ def tagPage():
 
     return render_template('tagPage.html', tagsPending=data, tagsApproved=data2)
 
-  
+
 @app.route('/tag', methods=['GET', 'POST'])
 def tag():
     cursor = conn.cursor()
@@ -285,34 +377,6 @@ def tagChoice():
         conn.commit()
         cursor.close()
     return redirect(url_for('tagPage'))
-
-
-@app.route('/addGroup', methods=['POST'])
-def addGroup():
-    owner_email = session['email']
-    fg_name = request.form['group_name']
-    description = request.form['description']
-    if description == '':  # if description not specified, set it to NULL
-        description = None
-    cursor = conn.cursor()
-    check_created = 'SELECT * FROM FriendGroup WHERE owner_email = %s AND fg_name = %s'
-    already_created = cursor.execute(check_created, (owner_email, fg_name))
-    cursor.close()
-    error = None
-    if already_created:
-        error = "This group already exists"
-        return redirect(url_for('home', error=error))
-    else:
-        cursor = conn.cursor()
-        query1 = 'INSERT INTO FriendGroup(owner_email, fg_name, description) VALUES (%s, %s, %s)'
-        query2 = 'INSERT INTO Belong(email, owner_email, fg_name) VALUES (%s, %s, %s)'
-        cursor.execute(query1, (owner_email, fg_name, description))
-        cursor.execute(query2, (owner_email, owner_email, fg_name))
-        conn.commit()
-        cursor.close()
-
-    return redirect(url_for('home'))
-
 
 app.secret_key = 'some key that you will never guess'
 # Run the app on localhost port 5000

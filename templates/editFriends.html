@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+</head>
+<body>
+
+<strong>Edit FriendGroups</strong>
+
+<br>
+<br>
+
+List of FriendGroups:
+
+<style type="text/css">
+	table {
+    border-collapse: collapse;
+    width: 50%;
+    }
+
+    th, td {
+    text-align: left;
+    padding: 8px;
+    }
+
+    tr:nth-child(even){background-color: #f2f2f2}
+
+    th {
+    background-color: #2313C7;
+    color: white;
+    }
+</style>
+
+
+
+<form action="/friendAuth" method="POST">
+	<table>
+	<th>FriendGroup Name</th>
+	<th>Description</th>
+
+	{% for line in friendgroup %}
+	<tr>
+			<td>{{line.fg_name}}</td>
+			<td>{{line.description}}</td>
+	</tr>
+	{% endfor %}
+	</table>
+
+	<br>
+	<input type="text" name = "fg" placeholder="FriendGroup name" required/> </br>
+	<input type="text" name = "friend_fname" placeholder="Friend's first name" required/> </br>
+	<input type="text" name = "friend_lname" placeholder="Friend's last name" required/> </br>
+	<input type="submit" name = buttonClicked value = Add />
+    <input type="submit" name = buttonClicked value = Remove />
+	{% if msg %}
+		<p class="msg">Message: {{msg}}</p>
+	{% endif %}
+</form>
+
+<a href="/home">Go back</a>
+
+</body>
+
+
+</html>

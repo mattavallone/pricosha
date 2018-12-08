@@ -71,7 +71,7 @@
 	<th>item_name</th>
     <th>location</th>
 
-	{% for line in posts %}
+{% for line in posts %}
 	<tr>
 		<form action="/tag" method="POST">
 		<td>{{line.item_id}}</td>
@@ -119,9 +119,7 @@
 {% endfor %}
 </table>
 <br>
-
-
-
+<a href="/editFriends">Edit Friends</a> <br>
 <a href="/tagPage">My Tags</a> <br>
 <a href="/logout">Logout</a>
 <br>
