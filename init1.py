@@ -23,7 +23,13 @@ conn = pymysql.connect(host='localhost',
 # Define a route to hello function
 @app.route('/')
 def hello():
-    return render_template('index.html')
+    cursor = conn.cursor()
+    query = 'SELECT item_id, email_post, post_time, file_path, item_name, location FROM contentitem WHERE is_pub = ' \
+            '1 AND post_time >= NOW() - INTERVAL 1 DAY '  # only show public content posted from the last day
+    cursor.execute(query)
+    data = cursor.fetchall()
+    cursor.close()
+    return render_template('index.html', publicposts=data)
 
 
 # Define route for login
@@ -89,18 +95,39 @@ def registerAuth():
 def home():
     email = session['email']
     cursor = conn.cursor()
-    #query = 'SELECT item_id, email_post, post_time, file_path, item_name, location FROM contentitem WHERE is_pub = ' \
-    #        '1 AND post_time >= NOW() - INTERVAL 1 DAY '  # only show public content posted from the last day
-    query = "SELECT item_id, email_post, post_time, file_path, item_name, location FROM contentitem WHERE contentitem.is_pub = 1 "\
-            "OR contentitem.email_post= '%s' OR contentitem.item_id in (SELECT item_id FROM share WHERE '%s' in" \
-            "(SELECT belong.email FROM belong WHERE share.fg_name = belong.fg_name) OR '%s' in (SELECT owner_email FROM" \
-            "friendgroup WHERE share.fg_name = fg_name )) AND post_time >= NOW() - INTERVAL 1 DAY ORDER BY post_time desc"
-
+    query = 'SELECT item_id, email_post, post_time, file_path, item_name, location FROM contentitem WHERE is_pub = ' \
+            '1 AND post_time >= NOW() - INTERVAL 1 DAY '  # only show public content posted from the last day
     cursor.execute(query)
     data = cursor.fetchall()
     cursor.close()
 
-    return render_template('home.html', username=email, posts=data)
+    cursor = conn.cursor()
+    fgnames = 'SELECT fg_name FROM friendgroup WHERE owner_email = %s'
+    cursor.execute(fgnames, email)  # retrieving friend groups existing in database
+    fg = cursor.fetchall()  # returns tuples of possible friend group names that exist in DB
+    cursor.close()
+
+    cursor = conn.cursor()
+    comments = 'SELECT commenter, item_id, comment FROM comment WHERE commenter = %s AND is_public = 1'
+    cursor.execute(comments, email)  # retrieving friend groups existing in database
+    cm = cursor.fetchall()  # returns tuples of possible friend group names that exist in DB
+    cursor.close()
+
+    cursor = conn.cursor()
+    createFGview = 'CREATE VIEW FG AS (SELECT fg_name FROM belong WHERE belong.email = %s); '
+    cursor.execute(createFGview, email)
+    conn.commit()
+    locdata = 'SELECT location, email_post AS Email FROM contentItem WHERE location IS NOT NULL AND ' \
+              'contentItem.email_post IN (SELECT DISTINCT email FROM belong NATURAL JOIN FG WHERE email != %s)AND ' \
+              'location IN (SELECT DISTINCT location FROM contentItem WHERE email_post = %s); '
+    cursor.execute(locdata, (email, email))
+    loc = cursor.fetchall()
+    dropFGview = 'DROP VIEW FG;'
+    cursor.execute(dropFGview)
+    conn.commit()
+    cursor.close()
+    return render_template('home.html', username=email, posts=data, fg=fg, locdata=loc, comments = cm)
+
 
 @app.route('/tagPage')
 def tagPage():
@@ -111,6 +138,7 @@ def tagPage():
     data = cursor.fetchall()
     cursor.close()
     cursor = conn.cursor()
+    
     query = 'SELECT item_id, email_tagger, tagtime FROM Tag WHERE email_tagged = %s AND status = %s'
     cursor.execute(query, (email, 'true'))
     data2 = cursor.fetchall()
@@ -169,39 +197,35 @@ def post():
     if is_private == '1':
         is_public = '0'
 
-        friend_group = request.form['friend_group']
-        checkFGname = 'SELECT fg_name FROM friendgroup WHERE owner_email = %s AND fg_name = %s'
-        cursor.execute(checkFGname, (email, friend_group))  # checking to see if friend group exists in database
-        fgname = cursor.fetchone()  # returns tuples of possible friend group names that exist in DB
+        friend_group = request.form.getlist('friend_group')
+
+        cursor = conn.cursor()
+        query = 'INSERT INTO contentItem (email_post, post_time, file_path, item_name, location, is_pub) VALUES(' \
+                '%s, %s, %s, %s, %s, %s) '
+        cursor.execute(query, (email, date, file_path, item_name, location, is_public))
+        conn.commit()
         cursor.close()
 
-        if fgname:  # if friend group name is valid for specific user, allow group to see content item
-            cursor = conn.cursor()
-            query = 'INSERT INTO contentItem (email_post, post_time, file_path, item_name, location, is_pub) VALUES(' \
-                    '%s, %s, %s, %s, %s, %s) '
-            cursor.execute(query, (email, date, file_path, item_name, location, is_public))
+        cursor = conn.cursor()
+        getItemID = 'SELECT item_id FROM contentItem WHERE item_name = %s'
+        cursor.execute(getItemID, item_name)  # retrieve correct item_id from database to use in next query
+        item_id = cursor.fetchone()
+        item_id = dict(item_id)  # need to turn tuple into dictionary for easy data access
+        cursor.close()
+
+        cursor = conn.cursor()  # updating share preferences for friend group
+        addItem2FG = 'INSERT INTO share(owner_email, fg_name, item_id) VALUES(%s, %s, %s)'
+        for fg_name in friend_group:
+            cursor.execute(addItem2FG, (email, fg_name, int(item_id['item_id'])))
             conn.commit()
-            cursor.close()
-
-            cursor = conn.cursor()
-            getItemID = 'SELECT item_id FROM contentItem WHERE item_name = %s'
-            cursor.execute(getItemID, item_name)  # retrieve correct item_id from database to use in next query
-            item_id = cursor.fetchone()
-            item_id = dict(item_id)  # need to turn tuple into dictionary for easy data access
-            cursor.close()
-
-            cursor = conn.cursor()
-            addItem2FG = 'INSERT INTO share(owner_email, fg_name, item_id) VALUES(%s, %s, %s)'
-            cursor.execute(addItem2FG, (email, friend_group, int(item_id['item_id'])))
-            # updating share preferences for friend group
 
     else:
         is_public = '1'
         query = 'INSERT INTO contentItem (email_post, post_time, file_path, item_name, location, is_pub) VALUES(%s, ' \
                 '%s, %s, %s, %s, %s) '
         cursor.execute(query, (email, date, file_path, item_name, location, is_public))
+        conn.commit()
 
-    conn.commit()
     cursor.close()
     return redirect(url_for('home'))
 
@@ -251,6 +275,19 @@ def tag():
     return redirect(url_for('home'))
 
 
+@app.route('/comment', methods=['GET', 'POST'])
+def comment():
+    email = session['email']
+    cursor = conn.cursor()
+    com = request.form['comment']
+    content_id = request.form['content_ids']
+    is_pub = request.form['is_public']
+    addComment = 'INSERT INTO comment(commenter, item_id, comment, is_public) VALUES(%s, %s, %s, %s)'
+    cursor.execute(addComment, (email, content_id, com, is_pub))
+    conn.commit()
+    cursor.close()
+    return redirect(url_for('home'))
+  
 @app.route('/tagChoice', methods=['GET', 'POST'])
 def tagChoice():
     email_tagged = session['email']

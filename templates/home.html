@@ -5,27 +5,31 @@
 <form action="/post" method="POST">
 	<h1>Welcome {{username}}</h1>
 	<h3>Add a Post:</h3>
-		Post Name <input type="text" name = "item_name" required/> <br>
-        Location &nbsp&nbsp&nbsp<input type="text" name = "location" /> <br>
-        File Path &nbsp&nbsp&nbsp<input type="text" name = "file_path" /> <br>
-        <input id="is_not_pub" type="checkbox" name="is_private" value="1" onchange="showDiv(this);"> Make Private? <br>
+	<input type="text" name = "item_name" placeholder="Post Name" maxlength="20" required /> <br>
+        <input type="text" name = "location" placeholder="Location" maxlength="30"/> <br>
+        <input type="text" name = "file_path" placeholder="File Path" maxlength="100"/> <br>
+        <input id="is_not_pub" type="checkbox" name="is_private" value="1" >
+		Make Private? <br> If yes, please pick Friend Group(s): <br>
+
         <input id="is_pub" type='hidden' value='0' name='is_private'>
 		<div id="friendgroup"> </div> <br>
 		<input type="submit" value = Post />
 
 </form>
 
-<script>
-	function showDiv(obj) {
-    debugger
-    if (obj.checked) {
-        document.getElementById('friendgroup').innerHTML = '<input type="text" id="friend_group" placeholder="Enter a FriendGroup Name" name = "friend_group" required/>';
-        }
-        else {
-            document.getElementById('friendgroup').innerHTML = '';
-        }
-    }
-</script>
+<form action="/comment" method="POST">
+	<h3>Add a Comment:</h3>
+	Content Item Id: <select name="content_ids">
+			{% for line in posts %}
+    			<option value="{{line.item_id}}">{{line.item_id}}</option>;
+			{% endfor %}
+   		</select><br>
+	<input id="pub_comment" type="checkbox" name="is_public" value="1" > Make Public? <br>
+        <input id="priv_comment" type='hidden' value='0' name='is_public'>
+	<input type="text" name="comment" placeholder="Enter a Comment" maxlength="256"required/> <br>
+	<input type="submit" value = "Add Comment" />
+
+</form>
 
 <style type="text/css">
 	table {
@@ -75,9 +79,39 @@
 		{% endif %}
 		</form>
 
+<br>
+
+<h3>Public Comments:</h3>
+<table>
+	<th>commenter</th>
+	<th>item_id</th>
+	<th>comment</th>
+
+{% for line in comments %}
+	<tr>
+		<td>{{line.commenter}}</td>
+		<td>{{line.item_id}}</td>
+		<td>{{line.comment}}</td>
 	</tr>
 {% endfor %}
 </table>
+
+<br>
+
+<h3>Friends in Similar Locations:</h3>
+<table>
+	<th>location</th>
+	<th>Email</th>
+
+{% for line in locdata %}
+	<tr>
+		<td>{{line.location}}</td>
+		<td>{{line.Email}}</td>
+
+	</tr>
+{% endfor %}
+
+    </table>
 <form action="/addGroup" method="POST">
 <h3> Create a Friend Group</h3>
 <input type="text" id="friend_group" placeholder="Enter a new Group Name" name = "group_name" required/><br>
