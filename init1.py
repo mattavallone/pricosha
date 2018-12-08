@@ -129,56 +129,10 @@ def home():
     return render_template('home.html', username=email, posts=data, fg=fg, locdata=loc, comments=cm)
 
 
-@app.route('/tagPage')
-def tagPage():
-    email = session['email']
-    cursor = conn.cursor()
-    query = 'SELECT item_id, email_tagger, tagtime FROM Tag WHERE email_tagged = %s AND status = %s'
-    cursor.execute(query, (email, 'false'))
-    data = cursor.fetchall()
-    cursor.close()
-    cursor = conn.cursor()
-    
-    query = 'SELECT item_id, email_tagger, tagtime FROM Tag WHERE email_tagged = %s AND status = %s'
-    cursor.execute(query, (email, 'true'))
-    data2 = cursor.fetchall()
-    cursor.close()
-
-    return render_template('tagPage.html', tagsPending=data, tagsApproved=data2)
-
-
 @app.route('/logout')
 def logout():
     session.pop('email')
     return redirect('/')
-
-
-# Post Feature
-@app.route('/addGroup', methods=['POST'])
-def addGroup():
-    owner_email = session['email']
-    fg_name = request.form['group_name']
-    description = request.form['description']
-    if description == '':  # if description not specified, set it to NULL
-        description = None
-    cursor = conn.cursor()
-    check_created = 'SELECT * FROM FriendGroup WHERE owner_email = %s AND fg_name = %s'
-    already_created = cursor.execute(check_created, (owner_email, fg_name))
-    cursor.close()
-    error = None
-    if already_created:
-        error = "This group already exists"
-        return redirect(url_for('home', error=error))
-    else:
-        cursor = conn.cursor()
-        query1 = 'INSERT INTO FriendGroup(owner_email, fg_name, description) VALUES (%s, %s, %s)'
-        query2 = 'INSERT INTO Belong(email, owner_email, fg_name) VALUES (%s, %s, %s)'
-        cursor.execute(query1, (owner_email, fg_name, description))
-        cursor.execute(query2, (owner_email, owner_email, fg_name))
-        conn.commit()
-        cursor.close()
-
-    return redirect(url_for('home'))
 
 
 @app.route('/post', methods=['GET', 'POST'])
@@ -232,7 +186,7 @@ def post():
 
 
 # Add Comment Feature
-@app.route('/comment', methods=['GET', 'POST'])
+@app.route('/comment')
 def comment():
     email = session['email']
     cursor = conn.cursor()
@@ -246,7 +200,7 @@ def comment():
     return redirect(url_for('home'))
 
 
-@app.route('/tagPage')
+@app.route('/tagPage', methods=['GET', 'POST'])
 def tagPage():
     email = session['email']
     cursor = conn.cursor()
@@ -326,7 +280,7 @@ def tagChoice():
         cursor.close()
     else:
         cursor = conn.cursor()
-        query = 'DELETE FROM Tag WHERE item_id = %s AND email_tagger = %s AND email_tagged = %s'
+        query = 'DELETE FROM tag WHERE item_id = %s AND email_tagger = %s AND email_tagged = %s'
         cursor.execute(query, (item_id, email_tagger, email_tagged))
         conn.commit()
         cursor.close()

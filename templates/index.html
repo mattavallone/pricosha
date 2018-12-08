@@ -45,47 +45,6 @@
 {% endfor %}
 </table><br>
 
-<body>
-
-<style type="text/css">
-	table {
-    border-collapse: collapse;
-    width: 50%;
-    }
-
-    th, td {
-    text-align: left;
-    padding: 8px;
-    }
-
-    tr:nth-child(even){background-color: #f2f2f2}
-
-    th {
-    background-color: #2313C7;
-    color: white;
-    }
-</style>
-
-<h3>Public Posts:</h3>
-<table>
-	<th>item_id</th>
-	<th>email_post</th>
-	<th>post_time</th>
-	<th>file_path</th>
-	<th>item_name</th>
-    <th>location</th>
-
-{% for line in publicposts %}
-	<tr>
-		<td>{{line.item_id}}</td>
-		<td>{{line.email_post}}</td>
-		<td>{{line.post_time}}</td>
-		<td>{{line.file_path}}</td>
-		<td>{{line.item_name}}</td>
-        <td>{{line.location}}</td>
-	</tr>
-{% endfor %}
-</table><br>
 	<a href="/login">Login</a>
 	<br>
 	<a href="/register">Register</a>
