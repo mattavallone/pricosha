@@ -279,7 +279,7 @@ def tagChoice():
         cursor.close()
     else:
         cursor = conn.cursor()
-        query = 'DELETE FROM Tag WHERE item_id = %s AND email_tagger = %s AND email_tagged = %s'
+        query = 'DELETE FROM tag WHERE item_id = %s AND email_tagger = %s AND email_tagged = %s'
         cursor.execute(query, (item_id, email_tagger, email_tagged))
         conn.commit()
         cursor.close()
