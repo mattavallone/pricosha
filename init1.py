@@ -110,7 +110,7 @@ def home():
     cursor.close()
 
     cursor = conn.cursor()
-    comments = 'SELECT commenter, item_id, comment FROM comment WHERE commenter = %s AND is_public = 1'
+    comments = 'SELECT commenter, item_id, text FROM comments WHERE commenter = %s AND is_public = 1'
     cursor.execute(comments, email)  # retrieving friend groups existing in database
     cm = cursor.fetchall()  # returns tuples of possible friend group names that exist in DB
     cursor.close()
@@ -206,11 +206,10 @@ def friendCtrl():
     cursor.execute(query, (newFreindEmail, fg_name))
     data = cursor.fetchone()
 
-
     msg = None
     buttonClicked = request.form['buttonClicked']
     if buttonClicked == "Add":
-        if (data):
+        if data:
             msg = "This person is already in this FriendGroup"
             return render_template('editFriends.html', friendgroup=fg_data, msg=msg)
         else:
@@ -284,14 +283,14 @@ def post():
 
 
 # Add Comment Feature
-@app.route('/comment')
+@app.route('/comments', methods=['GET', 'POST'])
 def comment():
     email = session['email']
     cursor = conn.cursor()
     com = request.form['comment']
     content_id = request.form['content_ids']
     is_pub = request.form['is_public']
-    addComment = 'INSERT INTO comment(commenter, item_id, comment, is_public) VALUES(%s, %s, %s, %s)'
+    addComment = 'INSERT INTO comments(commenter, item_id, text, is_public) VALUES(%s, %s, %s, %s)'
     cursor.execute(addComment, (email, content_id, com, is_pub))
     conn.commit()
     cursor.close()
