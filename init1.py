@@ -50,6 +50,7 @@ def loginAuth():
     # grabs information from the forms
     email = request.form['email']
     password = request.form['password']
+
     pw = sha256(password.encode('utf-8')).hexdigest()  # hashed password
 
     cursor = conn.cursor()
@@ -66,6 +67,10 @@ def loginAuth():
         return render_template('login.html', error=error)
 
 
+def find(s, ch):
+    return [i for i, ltr in enumerate(s) if ltr == ch]
+
+
 # Authenticates the register
 @app.route('/registerAuth', methods=['GET', 'POST'])
 def registerAuth():
@@ -74,16 +79,31 @@ def registerAuth():
     lname = request.form['lastName']
     email = request.form['email']
     password = request.form['password']
+
+    # Checking for spaces at the ends of fname and lname; spaces anywhere in email or password
+    fnameSpaceLocation = find(fname, ' ')
+    if int(len(fname)-1) in fnameSpaceLocation:
+        fname = fname[:int(len(fname)-2)]
+    lnameSpaceLocation = find(lname, ' ')
+    if int(len(lname)-1) in lnameSpaceLocation:
+        lname = lname[:int(len(lname)-2)]
+
     pw = sha256(password.encode('utf-8')).hexdigest()  # hashed password
 
     cursor = conn.cursor()
     query = 'SELECT * FROM person WHERE email = %s'
     cursor.execute(query, email)
     data = cursor.fetchone()
-    error = None
+
+    emailSpaceExists = email.find(' ')  # Finding any spaces in your email
+    passwordSpaceExists = password.find(' ')  # Finding any spaces in your password
+
     if data:  # checking to see if person already exists
         error = "This person already exists"
         return render_template('register.html', error=error)
+    elif emailSpaceExists or passwordSpaceExists:
+        spaceError = "Please remove any spaces from your email or password"
+        return render_template('register.html', error=spaceError)
     else:
         ins = 'INSERT INTO person VALUES(%s, %s, %s, %s)'
         cursor.execute(ins, (email, pw, fname, lname))
@@ -385,6 +405,7 @@ def tagChoice():
         conn.commit()
         cursor.close()
     return redirect(url_for('tagPage'))
+
 
 app.secret_key = 'some key that you will never guess'
 # Run the app on localhost port 5000
