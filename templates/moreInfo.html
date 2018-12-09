@@ -32,16 +32,15 @@
 	<th>post_time</th>
 	<th>item_name</th>
     <th>Tagged People</th>
-    <th>Comments</th>
 
-{% for line in posts %}
+{% for line in allTags %}
 	<tr>
 		<form action="/moreInfo" method="POST">
 		<td>{{line.item_id}}</td>
 		<td>{{line.email_post}}</td>
 		<td>{{line.post_time}}</td>
 		<td>{{line.item_name}}</td>
-
+        <td>{{line.wholeName}}</td>
 		</form>
 	</tr>
 	{% endfor %}

@@ -158,14 +158,15 @@ def home():
 def moreInfo():
     email = session['email']
     cursor = conn.cursor()
-    query = 'SELECT item_id, email_post, post_time, item_name FROM contentitem WHERE contentitem.is_pub = 1 ' \
-            'OR contentitem.email_post= %s OR contentitem.item_id in (SELECT item_id FROM share WHERE %s in' \
-            '(SELECT belong.email FROM belong WHERE share.fg_name = belong.fg_name) OR %s in (SELECT owner_email FROM' \
-            'friendgroup WHERE share.fg_name = fg_name )) AND post_time >= NOW() - INTERVAL 1 DAY ORDER BY post_time desc'
-    cursor.execute(query, (email, email, email))
+    query = 'SELECT item_id, email_post, post_time, item_name, concat(fname, " ", lname) as "Tagged People"' \
+            'FROM contentitem NATURAL LEFT OUTER JOIN tag NATURAL JOIN person WHERE tag.status = "true"' \
+            'AND contentitem.email_post= %s AND person.email = tag.email_tagged ORDER BY post_time desc'
+
+    cursor.execute(query, email)
     data = cursor.fetchall()
     cursor.close()
-    return render_template('moreInfo.html', username=email, posts=data)
+
+    return render_template('moreInfo.html', username=email, allTags=data)
 
 @app.route('/addGroup', methods=['POST'])
 def addGroup():
