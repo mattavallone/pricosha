@@ -131,8 +131,10 @@ def home():
     cursor.close()
 
     cursor = conn.cursor()
-    comments = 'SELECT commenter, item_id, text FROM comments WHERE commenter = %s AND is_public = 1'
-    cursor.execute(comments, email)  # retrieving friend groups existing in database
+    comments = 'SELECT commenter, item_id, text FROM comments WHERE commenter = %s OR is_public = 1 OR item_id in (' \
+               'SELECT item_id FROM share WHERE %s in (SELECT belong.email FROM belong WHERE share.fg_name = ' \
+               'belong.fg_name) OR %s in (SELECT owner_email FROM friendgroup WHERE share.fg_name = fg_name)) '
+    cursor.execute(comments, (email, email, email))  # retrieving comments visible to user existing in database
     cm = cursor.fetchall()  # returns tuples of possible friend group names that exist in DB
     cursor.close()
 
