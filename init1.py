@@ -50,7 +50,6 @@ def loginAuth():
     # grabs information from the forms
     email = request.form['email']
     password = request.form['password']
-
     pw = sha256(password.encode('utf-8')).hexdigest()  # hashed password
 
     cursor = conn.cursor()
@@ -116,11 +115,11 @@ def registerAuth():
 def home():
     email = session['email']
     cursor = conn.cursor()
-    query = "SELECT item_id, email_post, post_time, file_path, item_name, location FROM contentitem WHERE contentitem.is_pub = 1 " \
-            "OR contentitem.email_post= '%s' OR contentitem.item_id in (SELECT item_id FROM share WHERE '%s' in" \
-            "(SELECT belong.email FROM belong WHERE share.fg_name = belong.fg_name) OR '%s' in (SELECT owner_email FROM" \
-            "friendgroup WHERE share.fg_name = fg_name )) AND post_time >= NOW() - INTERVAL 1 DAY ORDER BY post_time desc"
-    cursor.execute(query)
+    query = 'SELECT item_id, email_post, post_time, file_path, item_name, location FROM contentitem WHERE contentitem.is_pub = 1 ' \
+            'OR contentitem.email_post= %s OR contentitem.item_id in (SELECT item_id FROM share WHERE %s in' \
+            '(SELECT belong.email FROM belong WHERE share.fg_name = belong.fg_name) OR %s in (SELECT owner_email FROM' \
+            'friendgroup WHERE share.fg_name = fg_name )) AND post_time >= NOW() - INTERVAL 1 DAY ORDER BY post_time desc'
+    cursor.execute(query, (email, email, email))
     data = cursor.fetchall()
     cursor.close()
 
@@ -152,11 +151,18 @@ def home():
     return render_template('home.html', username=email, posts=data, fg=fg, locdata=loc, comments=cm)
 
 
-@app.route('/logout')
-def logout():
-    session.pop('email')
-    return redirect('/')
-
+@app.route('/moreInfo')
+def moreInfo():
+    email = session['email']
+    cursor = conn.cursor()
+    query = 'SELECT item_id, email_post, post_time, item_name FROM contentitem WHERE contentitem.is_pub = 1 ' \
+            'OR contentitem.email_post= %s OR contentitem.item_id in (SELECT item_id FROM share WHERE %s in' \
+            '(SELECT belong.email FROM belong WHERE share.fg_name = belong.fg_name) OR %s in (SELECT owner_email FROM' \
+            'friendgroup WHERE share.fg_name = fg_name )) AND post_time >= NOW() - INTERVAL 1 DAY ORDER BY post_time desc'
+    cursor.execute(query, (email, email, email))
+    data = cursor.fetchall()
+    cursor.close()
+    return render_template('moreInfo.html', username=email, posts=data)
 
 @app.route('/addGroup', methods=['POST'])
 def addGroup():
@@ -186,7 +192,7 @@ def addGroup():
 
 
 @app.route('/editFriends', methods=["GET", "POST"])
-def add_friend():
+def view_friend():
     user = session['email']
     cursor = conn.cursor();
     query = 'SELECT fg_name, description FROM friendgroup WHERE owner_email = %s'
@@ -406,6 +412,10 @@ def tagChoice():
         cursor.close()
     return redirect(url_for('tagPage'))
 
+@app.route('/logout')
+def logout():
+    session.pop('email')
+    return redirect('/')
 
 app.secret_key = 'some key that you will never guess'
 # Run the app on localhost port 5000

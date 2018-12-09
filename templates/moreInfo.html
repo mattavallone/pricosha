@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Content Info</title>
+</head>
+<body>
+
+<style type="text/css">
+	table {
+    border-collapse: collapse;
+    width: 50%;
+    }
+
+    th, td {
+    text-align: left;
+    padding: 8px;
+    }
+
+    tr:nth-child(even){background-color: #f2f2f2}
+
+    th {
+    background-color: #2313C7;
+    color: white;
+    }
+</style>
+
+<h3>View All Posts:</h3>
+<table>
+	<th>item_id</th>
+	<th>email_post</th>
+	<th>post_time</th>
+	<th>item_name</th>
+    <th>Tagged People</th>
+    <th>Comments</th>
+
+{% for line in posts %}
+	<tr>
+		<form action="/moreInfo" method="POST">
+		<td>{{line.item_id}}</td>
+		<td>{{line.email_post}}</td>
+		<td>{{line.post_time}}</td>
+		<td>{{line.item_name}}</td>
+
+		</form>
+	</tr>
+	{% endfor %}
+</table>
+<br>
+
+</body>
+</html>
