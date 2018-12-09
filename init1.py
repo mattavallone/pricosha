@@ -43,6 +43,7 @@ def login():
 def register():
     return render_template('register.html')
 
+
 # Authenticates the login
 @app.route('/loginAuth', methods=['GET', 'POST'])
 def loginAuth():
@@ -163,6 +164,7 @@ def addGroup():
 
     return redirect(url_for('home'))
 
+
 @app.route('/editFriends', methods=["GET", "POST"])
 def add_friend():
     user = session['email']
@@ -231,6 +233,7 @@ def friendCtrl():
         cursor.close()
         msg = friend_fname + " has been removed from FriendGroup " + fg_name
         return render_template('editFriends.html', friendgroup=fg_data, msg=msg)
+
 
 @app.route('/post', methods=['GET', 'POST'])
 def post():
