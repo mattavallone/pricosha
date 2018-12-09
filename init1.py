@@ -66,6 +66,7 @@ def loginAuth():
         return render_template('login.html', error=error)
 
 
+# Returns an array of indices where char ch exists in string s
 def find(s, ch):
     return [i for i, ltr in enumerate(s) if ltr == ch]
 

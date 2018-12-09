@@ -3,8 +3,66 @@
 	<meta charset="UTF-8">
     <title>Home Page</title>
 </head>
+
+<style type="text/css">
+
+ul {
+  list-style-type: none;
+  margin: 0;
+  padding: 0;
+  width: 10%;
+  background-color: #f1f1f1;
+  position: fixed;
+  height: 100%;
+  overflow: auto;
+}
+
+li a {
+  display: block;
+  color: #000;
+  padding: 8px 16px;
+  text-decoration: none;
+}
+
+li a.active {
+  background-color: #2313C7;
+  color: white;
+}
+
+li a:hover:not(.active) {
+  background-color: #555;
+  color: white;
+}
+
+	table {
+    border-collapse: collapse;
+    width: 50%;
+    }
+
+    th, td {
+    text-align: left;
+    padding: 8px;
+    }
+
+    tr:nth-child(even){background-color: #f2f2f2}
+
+    th {
+    background-color: #2313C7;
+    color: white;
+    }
+</style>
+
+<ul>
+  <li><a class="active" href="/home">Home</a></li>
+  <li><a href="/editFriends">Edit Friends</a></li>
+  <li><a href="/tagPage">My Tags</a></li>
+  <li><a href="/logout">Logout</a></li>
+</ul>
+
 <body>
-<form action="/post" method="POST">
+
+<div style="margin-left:10%;padding:1px 16px;height:1000px;">
+    <form action="/post" method="POST">
 	<h1>Welcome {{username}}</h1>
 	<h3>Add a Post:</h3>
 	<input type="text" name = "item_name" placeholder="Post Name" maxlength="20" required /> <br>
@@ -20,7 +78,7 @@
    		</select><br>
 		<input type="submit" value = Post />
 
-</form>
+    </form>
 
 <form action="/comments" method="POST">
 	<h3>Add a Comment:</h3>
@@ -45,24 +103,6 @@
 </form>
 <br>
 
-<style type="text/css">
-	table {
-    border-collapse: collapse;
-    width: 50%;
-    }
-
-    th, td {
-    text-align: left;
-    padding: 8px;
-    }
-
-    tr:nth-child(even){background-color: #f2f2f2}
-
-    th {
-    background-color: #2313C7;
-    color: white;
-    }
-</style>
 
 <h3>View All Posts:</h3>
 <table>
@@ -123,10 +163,7 @@
 	</tr>
 {% endfor %}
 </table>
-<br>
-<a href="/editFriends">Edit Friends</a> <br>
-<a href="/tagPage">My Tags</a> <br>
-<a href="/logout">Logout</a>
-<br>
+</div>
+
 </body>
 </html>

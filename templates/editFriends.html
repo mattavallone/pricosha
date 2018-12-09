@@ -2,16 +2,36 @@
 <html lang="en">
 <head>
 </head>
-<body>
-
-<strong>Edit Friend Groups</strong>
-
-<br>
-<br>
-
-List of FriendGroups:
-
 <style type="text/css">
+
+ul {
+  list-style-type: none;
+  margin: 0;
+  padding: 0;
+  width: 10%;
+  background-color: #f1f1f1;
+  position: fixed;
+  height: 100%;
+  overflow: auto;
+}
+
+li a {
+  display: block;
+  color: #000;
+  padding: 8px 16px;
+  text-decoration: none;
+}
+
+li a.active {
+  background-color: #2313C7;
+  color: white;
+}
+
+li a:hover:not(.active) {
+  background-color: #555;
+  color: white;
+}
+
 	table {
     border-collapse: collapse;
     width: 50%;
@@ -30,9 +50,20 @@ List of FriendGroups:
     }
 </style>
 
+<ul>
+  <li><a href="/home">Home</a></li>
+  <li><a class="active" href="/editFriends">Edit Friends</a></li>
+  <li><a href="/tagPage">My Tags</a></li>
+  <li><a href="/logout">Logout</a></li>
+</ul>
+
+<body>
+<div style="margin-left:10%;padding:1px 16px;height:1000px;">
+<h1>Edit Friend Groups</h1>
 
 
 <form action="/friendCtrl" method="POST">
+	<h3>List of Friend Groups:</h3>
 	<table>
 	<th>FriendGroup Name</th>
 	<th>Description</th>
@@ -55,8 +86,7 @@ List of FriendGroups:
 		<p class="msg">Message: {{msg}}</p>
 	{% endif %}
 </form>
-
-<a href="/home">Go back</a>
+</div>
 
 </body>
 
