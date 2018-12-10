@@ -124,7 +124,7 @@ li a:hover:not(.active) {
 		<td>{{line.file_path}}</td>
 		<td>{{line.item_name}}</td>
         <td>{{line.location}}</td>
-		<td> <div id="tagBox"> <input type="text" id="tagged" placeholder="Enter a Person to tag" name = "tagged" required/> <input type="hidden" class="form-control" name="item_id" value="{{line.item_id}}"> </div> <input type="submit" value = Tag /> </td>
+		<td> <div id="tagBox"> <input type="email" id="tagged" placeholder="Enter a Person to tag" name = "tagged" required/> <input type="hidden" class="form-control" name="item_id" value="{{line.item_id}}"> </div> <input type="submit" value = Tag /> </td>
 			{% if error %}
 				<p class="error"><strong>Error:</strong> {{error1}}</p>
 			{% endif %}

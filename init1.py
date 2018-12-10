@@ -153,6 +153,7 @@ def home():
     cursor.close()
     return render_template('home.html', username=email, posts=data, fg=fg, locdata=loc, comments=cm)
 
+
 @app.route('/indexId', methods=['GET', 'POST'])
 def getIndexID():
     item_id = request.form['itemId']
@@ -230,32 +231,32 @@ def view_friend():
 
 @app.route('/friendCtrl', methods=['GET', 'POST'])
 def friendCtrl():
-    #Get info of the new friend
-    owner = session['email'] #current user email
+    # Get info of the new friend
+    owner = session['email']  # current user email
     friend_fname = request.form['friend_fname']
     friend_lname = request.form['friend_lname']
     fg_name = request.form['fg']
 
-    #Get user's friend in FriendGroup
+    # Get user's friend in FriendGroup
     cursor = conn.cursor()
     query = 'SELECT fg_name, description FROM friendgroup WHERE owner_email = %s'
     cursor.execute(query, (owner))
     fg_data = cursor.fetchall()
 
     # Check new Friend with existing list of Friends within the group
-    query = 'SELECT fname, lname FROM person WHERE fname = %s AND lname = %s'
+    query = 'SELECT fname, lname FROM person WHERE fname = %s AND lname = %s'  # first check if Person exists
     cursor.execute(query, (friend_fname, friend_lname))
     exist_data = cursor.fetchone()
 
     if (not exist_data):
         msg = "This user does not exist."
         return render_template('editFriends.html', friendgroup=fg_data, msg=msg)
-    #Gets the email of person with the given f&l_name
+    # Gets the email of person with the given f&l_name
     query = 'SELECT email FROM person WHERE fname = %s AND lname = %s'
     cursor.execute(query, (friend_fname, friend_lname))
     email_data = cursor.fetchone()
     newFreindEmail = email_data['email']
-    #Gets all the emails associated with the current user email
+    # Gets all the emails associated with the current user email
     query = 'SELECT email FROM belong WHERE email = %s AND fg_name = %s'
     cursor.execute(query, (newFreindEmail, fg_name))
     data = cursor.fetchone()
