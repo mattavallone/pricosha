@@ -66,7 +66,7 @@ li a:hover:not(.active) {
 <h3>Tags:</h3>
 <table>
 	<th>Item ID</th>
-    <th>Tagged People</th>
+    <th>Tagged Person</th>
 
 {% for line in allTags %}
 	<tr>
@@ -80,11 +80,11 @@ li a:hover:not(.active) {
 <h3>Ratings:</h3>
 <br>
 <table>
-	<th>item_id</th>
+	<th>Item ID</th>
     <th>Person</th>
     <th>Rating</th>
 
-{% for line in allTags %}
+{% for line in allRates %}
 	<tr>
 		<td>{{line.item_id}}</td>
         <td>{{line.fullName}}</td>

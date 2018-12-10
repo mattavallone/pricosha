@@ -26,7 +26,7 @@ def hello():
     cursor = conn.cursor()
     query = 'SELECT item_id, email_post, post_time, file_path, item_name, location FROM contentitem WHERE is_pub = ' \
             '1 AND post_time >= NOW() - INTERVAL 1 DAY '  # only show public content posted from the last day
-    cursor.execute(query)
+    cursor.execute(query)  # Displaying public posts before login
     data = cursor.fetchall()
     cursor.close()
     return render_template('index.html', publicposts=data)
@@ -81,7 +81,7 @@ def registerAuth():
     password = request.form['password']
 
     # Checking for spaces at the ends of fname and lname; spaces anywhere in email or password
-    fnameSpaceLocation = find(fname, ' ')
+    fnameSpaceLocation = find(fname, ' ')  # calls function described above
     if int(len(fname)-1) in fnameSpaceLocation:
         fname = fname[:int(len(fname)-2)]
     lnameSpaceLocation = find(lname, ' ')
@@ -178,7 +178,8 @@ def moreInfo():
     dropRateview = 'DROP VIEW ratings'
     cursor.execute(dropRateview)
     cursor.close()
-    return render_template('moreInfo.html', aItemId=item_id,allTags=data)
+
+    return render_template('moreInfo.html', aItemId=item_id, allTags=data, allRates=data2)
 
 
 
@@ -429,6 +430,7 @@ def tagChoice():
         conn.commit()
         cursor.close()
     return redirect(url_for('tagPage'))
+
 
 @app.route('/likeContent', methods=['POST'])
 def likeContent():
