@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+</head>
+<style type="text/css">
+
+ul {
+  list-style-type: none;
+  margin: 0;
+  padding: 0;
+  width: 10%;
+  background-color: #f1f1f1;
+  position: fixed;
+  height: 100%;
+  overflow: auto;
+}
+
+li a {
+  display: block;
+  color: #000;
+  padding: 8px 16px;
+  text-decoration: none;
+}
+
+li a.active {
+  background-color: #2313C7;
+  color: white;
+}
+
+li a:hover:not(.active) {
+  background-color: #555;
+  color: white;
+}
+
+	table {
+    border-collapse: collapse;
+    width: 50%;
+    }
+
+    th, td {
+    text-align: left;
+    padding: 8px;
+    }
+
+    tr:nth-child(even){background-color: #f2f2f2}
+
+    th {
+    background-color: #2313C7;
+    color: white;
+    }
+</style>
+
+<ul>
+  <li><a href="/home">Home</a></li>
+  <li><a class="active" href="/editFriends">Edit Friends</a></li>
+  <li><a href="/tagPage">My Tags</a></li>
+  <li><a href="/logout">Logout</a></li>
+</ul>
+
+<body>
+<div style="margin-left:10%;padding:1px 16px;height:1000px;">
+<h1>Edit Friend Groups</h1>
+
+
+<form action="/friendCtrl" method="POST">
+	<h3>List of Friend Groups:</h3>
+	<table>
+	<th>FriendGroup Name</th>
+	<th>Description</th>
+
+	{% for line in friendgroup %}
+	<tr>
+			<td>{{line.fg_name}}</td>
+			<td>{{line.description}}</td>
+	</tr>
+	{% endfor %}
+	</table>
+
+	<br>
+	<input type="text" name = "fg" placeholder="FriendGroup name" required/> </br>
+	<input type="text" name = "friend_fname" placeholder="Friend's first name" required/> </br>
+	<input type="text" name = "friend_lname" placeholder="Friend's last name" required/> </br>
+	<input type="submit" name = buttonClicked value = Add />
+    <input type="submit" name = buttonClicked value = Remove />
+	{% if msg %}
+		<p class="msg">Message: {{msg}}</p>
+	{% endif %}
+</form>
+</div>
+<br>
+
+</body>
+
+
+</html>

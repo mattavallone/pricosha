@@ -1,9 +1,10 @@
 <!DOCTYPE html>
 <html>
-
 <head>
-	<h2>Welcome to Pricosha!</h2>
+    <meta charset="UTF-8">
+    <title>Content Info</title>
 </head>
+<body>
 
 <style type="text/css">
 	table {
@@ -24,30 +25,27 @@
     }
 </style>
 
-<h3>Public Posts:</h3>
+<h3>View All Posts:</h3>
 <table>
 	<th>item_id</th>
 	<th>email_post</th>
 	<th>post_time</th>
-	<th>file_path</th>
 	<th>item_name</th>
-    <th>location</th>
+    <th>Tagged People</th>
 
-{% for line in publicposts %}
+{% for line in allTags %}
 	<tr>
+		<form action="/moreInfo" method="POST">
 		<td>{{line.item_id}}</td>
 		<td>{{line.email_post}}</td>
 		<td>{{line.post_time}}</td>
-		<td>{{line.file_path}}</td>
 		<td>{{line.item_name}}</td>
-        <td>{{line.location}}</td>
+        <td>{{line.wholeName}}</td>
+		</form>
 	</tr>
-{% endfor %}
-</table><br>
+	{% endfor %}
+</table>
+<br>
 
-	<a href="/login">Login</a>
-	<br>
-	<a href="/register">Register</a>
 </body>
-
 </html>

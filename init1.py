@@ -43,6 +43,7 @@ def login():
 def register():
     return render_template('register.html')
 
+
 # Authenticates the login
 @app.route('/loginAuth', methods=['GET', 'POST'])
 def loginAuth():
@@ -65,6 +66,11 @@ def loginAuth():
         return render_template('login.html', error=error)
 
 
+# Returns an array of indices where char ch exists in string s
+def find(s, ch):
+    return [i for i, ltr in enumerate(s) if ltr == ch]
+
+
 # Authenticates the register
 @app.route('/registerAuth', methods=['GET', 'POST'])
 def registerAuth():
@@ -73,16 +79,31 @@ def registerAuth():
     lname = request.form['lastName']
     email = request.form['email']
     password = request.form['password']
+
+    # Checking for spaces at the ends of fname and lname; spaces anywhere in email or password
+    fnameSpaceLocation = find(fname, ' ')
+    if int(len(fname)-1) in fnameSpaceLocation:
+        fname = fname[:int(len(fname)-2)]
+    lnameSpaceLocation = find(lname, ' ')
+    if int(len(lname)-1) in lnameSpaceLocation:
+        lname = lname[:int(len(lname)-2)]
+
     pw = sha256(password.encode('utf-8')).hexdigest()  # hashed password
 
     cursor = conn.cursor()
     query = 'SELECT * FROM person WHERE email = %s'
     cursor.execute(query, email)
     data = cursor.fetchone()
-    error = None
+
+    emailSpaceExists = email.find(' ')  # Finding any spaces in your email
+    passwordSpaceExists = password.find(' ')  # Finding any spaces in your password
+
     if data:  # checking to see if person already exists
         error = "This person already exists"
         return render_template('register.html', error=error)
+    elif emailSpaceExists or passwordSpaceExists:
+        spaceError = "Please remove any spaces from your email or password"
+        return render_template('register.html', error=spaceError)
     else:
         ins = 'INSERT INTO person VALUES(%s, %s, %s, %s)'
         cursor.execute(ins, (email, pw, fname, lname))
@@ -95,9 +116,11 @@ def registerAuth():
 def home():
     email = session['email']
     cursor = conn.cursor()
-    query = 'SELECT item_id, email_post, post_time, file_path, item_name, location FROM contentitem WHERE is_pub = ' \
-            '1 AND post_time >= NOW() - INTERVAL 1 DAY '  # only show public content posted from the last day
-    cursor.execute(query)
+    query = 'SELECT item_id, email_post, post_time, file_path, item_name, location FROM contentitem WHERE contentitem.is_pub = 1 ' \
+            'OR contentitem.email_post= %s OR contentitem.item_id in (SELECT item_id FROM share WHERE %s in' \
+            '(SELECT belong.email FROM belong WHERE share.fg_name = belong.fg_name) OR %s in (SELECT owner_email FROM' \
+            'friendgroup WHERE share.fg_name = fg_name )) AND post_time >= NOW() - INTERVAL 1 DAY ORDER BY post_time desc'
+    cursor.execute(query, (email, email, email))
     data = cursor.fetchall()
     cursor.close()
 
@@ -108,8 +131,10 @@ def home():
     cursor.close()
 
     cursor = conn.cursor()
-    comments = 'SELECT commenter, item_id, comment FROM comment WHERE commenter = %s AND is_public = 1'
-    cursor.execute(comments, email)  # retrieving friend groups existing in database
+    comments = 'SELECT commenter, item_id, text FROM comments WHERE commenter = %s OR is_public = 1 OR item_id in (' \
+               'SELECT item_id FROM share WHERE %s in (SELECT belong.email FROM belong WHERE share.fg_name = ' \
+               'belong.fg_name) OR %s in (SELECT owner_email FROM friendgroup WHERE share.fg_name = fg_name)) '
+    cursor.execute(comments, (email, email, email))  # retrieving comments visible to user existing in database
     cm = cursor.fetchall()  # returns tuples of possible friend group names that exist in DB
     cursor.close()
 
@@ -129,31 +154,20 @@ def home():
     return render_template('home.html', username=email, posts=data, fg=fg, locdata=loc, comments=cm)
 
 
-@app.route('/tagPage')
-def tagPage():
+@app.route('/moreInfo')
+def moreInfo():
     email = session['email']
     cursor = conn.cursor()
-    query = 'SELECT item_id, email_tagger, tagtime FROM Tag WHERE email_tagged = %s AND status = %s'
-    cursor.execute(query, (email, 'false'))
+    query = 'SELECT item_id, email_post, post_time, item_name, concat(fname, " ", lname) as "Tagged People"' \
+            'FROM contentitem NATURAL LEFT OUTER JOIN tag NATURAL JOIN person WHERE tag.status = "true"' \
+            'AND contentitem.email_post= %s AND person.email = tag.email_tagged ORDER BY post_time desc'
+
+    cursor.execute(query, email)
     data = cursor.fetchall()
     cursor.close()
-    cursor = conn.cursor()
-    
-    query = 'SELECT item_id, email_tagger, tagtime FROM Tag WHERE email_tagged = %s AND status = %s'
-    cursor.execute(query, (email, 'true'))
-    data2 = cursor.fetchall()
-    cursor.close()
 
-    return render_template('tagPage.html', tagsPending=data, tagsApproved=data2)
+    return render_template('moreInfo.html', username=email, allTags=data)
 
-
-@app.route('/logout')
-def logout():
-    session.pop('email')
-    return redirect('/')
-
-
-# Post Feature
 @app.route('/addGroup', methods=['POST'])
 def addGroup():
     owner_email = session['email']
@@ -179,6 +193,76 @@ def addGroup():
         cursor.close()
 
     return redirect(url_for('home'))
+
+
+@app.route('/editFriends', methods=["GET", "POST"])
+def view_friend():
+    user = session['email']
+    cursor = conn.cursor();
+    query = 'SELECT fg_name, description FROM friendgroup WHERE owner_email = %s'
+    cursor.execute(query, (user))
+    data = cursor.fetchall()
+    cursor.close()
+    return render_template('editFriends.html', friendgroup=data)
+
+
+@app.route('/friendCtrl', methods=['GET', 'POST'])
+def friendCtrl():
+    #Get info of the new friend
+    owner = session['email'] #current user email
+    friend_fname = request.form['friend_fname']
+    friend_lname = request.form['friend_lname']
+    fg_name = request.form['fg']
+
+    #Get user's friend in FriendGroup
+    cursor = conn.cursor()
+    query = 'SELECT fg_name, description FROM friendgroup WHERE owner_email = %s'
+    cursor.execute(query, (owner))
+    fg_data = cursor.fetchall()
+
+    # Check new Friend with existing list of Friends within the group
+    query = 'SELECT fname, lname FROM person WHERE fname = %s AND lname = %s'
+    cursor.execute(query, (friend_fname, friend_lname))
+    exist_data = cursor.fetchone()
+
+    if (not exist_data):
+        msg = "This user does not exist."
+        return render_template('editFriends.html', friendgroup=fg_data, msg=msg)
+    #Gets the email of person with the given f&l_name
+    query = 'SELECT email FROM person WHERE fname = %s AND lname = %s'
+    cursor.execute(query, (friend_fname, friend_lname))
+    email_data = cursor.fetchone()
+    newFreindEmail = email_data['email']
+    #Gets all the emails associated with the current user email
+    query = 'SELECT email FROM belong WHERE email = %s AND fg_name = %s'
+    cursor.execute(query, (newFreindEmail, fg_name))
+    data = cursor.fetchone()
+
+    msg = None
+    buttonClicked = request.form['buttonClicked']
+    if buttonClicked == "Add":
+        if data:
+            msg = "This person is already in this FriendGroup"
+            return render_template('editFriends.html', friendgroup=fg_data, msg=msg)
+        else:
+            ins = 'INSERT INTO belong VALUES(%s, %s, %s)'
+            cursor.execute(ins, (newFreindEmail, owner, fg_name))
+            conn.commit()
+            cursor.close()
+            msg = friend_fname + " has been added"
+            return render_template('editFriends.html', friendgroup=fg_data, msg=msg)
+    elif buttonClicked == "Remove":
+        if (not data):
+            msg = "This person is not in this FriendGroup"
+            return render_template('editFriends.html', friendgroup=fg_data, msg=msg)
+        dele1 = 'DELETE FROM belong WHERE email = %s AND owner_email = %s AND fg_name = %s'
+        cursor.execute(dele1, (newFreindEmail, owner, fg_name))
+        dele2 = 'DELETE FROM tag WHERE email_tagged = %s AND email_tagger = %s'
+        cursor.execute(dele2, (newFreindEmail, owner))
+        conn.commit()
+        cursor.close()
+        msg = friend_fname + " has been removed from FriendGroup " + fg_name
+        return render_template('editFriends.html', friendgroup=fg_data, msg=msg)
 
 
 @app.route('/post', methods=['GET', 'POST'])
@@ -232,21 +316,21 @@ def post():
 
 
 # Add Comment Feature
-@app.route('/comment', methods=['GET', 'POST'])
+@app.route('/comments', methods=['GET', 'POST'])
 def comment():
     email = session['email']
     cursor = conn.cursor()
     com = request.form['comment']
     content_id = request.form['content_ids']
     is_pub = request.form['is_public']
-    addComment = 'INSERT INTO comment(commenter, item_id, comment, is_public) VALUES(%s, %s, %s, %s)'
+    addComment = 'INSERT INTO comments(commenter, item_id, text, is_public) VALUES(%s, %s, %s, %s)'
     cursor.execute(addComment, (email, content_id, com, is_pub))
     conn.commit()
     cursor.close()
     return redirect(url_for('home'))
 
 
-@app.route('/tagPage')
+@app.route('/tagPage', methods=['GET', 'POST'])
 def tagPage():
     email = session['email']
     cursor = conn.cursor()
@@ -262,7 +346,7 @@ def tagPage():
 
     return render_template('tagPage.html', tagsPending=data, tagsApproved=data2)
 
-  
+
 @app.route('/tag', methods=['GET', 'POST'])
 def tag():
     cursor = conn.cursor()
@@ -326,39 +410,16 @@ def tagChoice():
         cursor.close()
     else:
         cursor = conn.cursor()
-        query = 'DELETE FROM Tag WHERE item_id = %s AND email_tagger = %s AND email_tagged = %s'
+        query = 'DELETE FROM tag WHERE item_id = %s AND email_tagger = %s AND email_tagged = %s'
         cursor.execute(query, (item_id, email_tagger, email_tagged))
         conn.commit()
         cursor.close()
     return redirect(url_for('tagPage'))
 
-
-@app.route('/addGroup', methods=['POST'])
-def addGroup():
-    owner_email = session['email']
-    fg_name = request.form['group_name']
-    description = request.form['description']
-    if description == '':  # if description not specified, set it to NULL
-        description = None
-    cursor = conn.cursor()
-    check_created = 'SELECT * FROM FriendGroup WHERE owner_email = %s AND fg_name = %s'
-    already_created = cursor.execute(check_created, (owner_email, fg_name))
-    cursor.close()
-    error = None
-    if already_created:
-        error = "This group already exists"
-        return redirect(url_for('home', error=error))
-    else:
-        cursor = conn.cursor()
-        query1 = 'INSERT INTO FriendGroup(owner_email, fg_name, description) VALUES (%s, %s, %s)'
-        query2 = 'INSERT INTO Belong(email, owner_email, fg_name) VALUES (%s, %s, %s)'
-        cursor.execute(query1, (owner_email, fg_name, description))
-        cursor.execute(query2, (owner_email, owner_email, fg_name))
-        conn.commit()
-        cursor.close()
-
-    return redirect(url_for('home'))
-
+@app.route('/logout')
+def logout():
+    session.pop('email')
+    return redirect('/')
 
 app.secret_key = 'some key that you will never guess'
 # Run the app on localhost port 5000

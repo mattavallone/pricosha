@@ -1,51 +1,39 @@
 <html>
 <head>
+	<meta charset="UTF-8">
+    <title>Home Page</title>
 </head>
-<body>
-<form action="/post" method="POST">
-	<h1>Welcome {{username}}</h1>
-	<h3>Add a Post:</h3>
-	<input type="text" name = "item_name" placeholder="Post Name" maxlength="20" required /> <br>
-        <input type="text" name = "location" placeholder="Location" maxlength="30"/> <br>
-        <input type="text" name = "file_path" placeholder="File Path" maxlength="100"/> <br>
-        <input id="is_not_pub" type="checkbox" name="is_private" value="1" >
-		Make Private? <br> If yes, please pick Friend Group(s): <br>
-
-        <input id="is_pub" type='hidden' value='0' name='is_private'>
-		<div id="friendgroup"> </div> <br>
-		<input type="submit" value = Post />
-
-</form>
-
-<form action="/comment" method="POST">
-	<h3>Add a Comment:</h3>
-	Content Item Id: <select name="content_ids">
-			{% for line in posts %}
-    			<option value="{{line.item_id}}">{{line.item_id}}</option>;
-			{% endfor %}
-   		</select><br>
-	<input id="pub_comment" type="checkbox" name="is_public" value="1" > Make Public? <br>
-        <input id="priv_comment" type='hidden' value='0' name='is_public'>
-	<input type="text" name="comment" placeholder="Enter a Comment" maxlength="256"required/> <br>
-	<input type="submit" value = "Add Comment" />
-
-</form>
-
-<form action="/comment" method="POST">
-	<h3>Add a Comment:</h3>
-	Content Item Id: <select name="content_ids">
-			{% for line in posts %}
-    			<option value="{{line.item_id}}">{{line.item_id}}</option>;
-			{% endfor %}
-   		</select><br>
-	<input id="pub_comment" type="checkbox" name="is_public" value="1" > Make Public? <br>
-        <input id="priv_comment" type='hidden' value='0' name='is_public'>
-	<input type="text" name="comment" placeholder="Enter a Comment" maxlength="256"required/> <br>
-	<input type="submit" value = "Add Comment" />
-
-</form>
 
 <style type="text/css">
+
+ul {
+  list-style-type: none;
+  margin: 0;
+  padding: 0;
+  width: 10%;
+  background-color: #f1f1f1;
+  position: fixed;
+  height: 100%;
+  overflow: auto;
+}
+
+li a {
+  display: block;
+  color: #000;
+  padding: 8px 16px;
+  text-decoration: none;
+}
+
+li a.active {
+  background-color: #2313C7;
+  color: white;
+}
+
+li a:hover:not(.active) {
+  background-color: #555;
+  color: white;
+}
+
 	table {
     border-collapse: collapse;
     width: 50%;
@@ -64,12 +52,59 @@
     }
 </style>
 
-<h3>Public Posts:</h3>
-<form action="/post" method="GET">
-	<input type="radio" value = "publicView"> Public view
-    <input type="radio" value = "privateView"> Private view
+<ul>
+  <li><a class="active" href="/home">Home</a></li>
+  <li><a href="/editFriends">Edit Friends</a></li>
+  <li><a href="/tagPage">My Tags</a></li>
+  <li><a href="/logout">Logout</a></li>
+</ul>
+
+<body>
+
+<div style="margin-left:10%;padding:1px 16px;height:1000px;">
+    <form action="/post" method="POST">
+	<h1>Welcome {{username}}</h1>
+	<h3>Add a Post:</h3>
+	<input type="text" name = "item_name" placeholder="Post Name" maxlength="20" required /> <br>
+        <input type="text" name = "location" placeholder="Location" maxlength="30"/> <br>
+        <input type="text" name = "file_path" placeholder="File Path" maxlength="100"/> <br>
+        <input id="is_not_pub" type="checkbox" name="is_private" value="1" >
+		Make Private? <br> If yes, please pick Friend Group(s): <br>
+ 		<input id="is_pub" type='hidden' value='0' name='is_private'>
+		<select name="friend_group" multiple size="len(fg)">
+			{% for line in fg %}
+    			<option value="{{line.fg_name}}">{{line.fg_name}}</option>;
+			{% endfor %}
+   		</select><br>
+		<input type="submit" value = Post />
+
+    </form>
+
+<form action="/comments" method="POST">
+	<h3>Add a Comment:</h3>
+	Content Item Id: <select name="content_ids">
+			{% for line in posts %}
+    			<option value="{{line.item_id}}">{{line.item_id}}</option>;
+			{% endfor %}
+   		</select><br>
+	<input id="pub_comment" type="checkbox" name="is_public" value="1" > Make Public? <br>
+        <input id="priv_comment" type='hidden' value='0' name='is_public'>
+	<input type="text" name="comment" placeholder="Enter a Comment" maxlength="256" required/> <br>
+	<input type="submit" value = "Add Comment" />
+
 </form>
 
+<form action="/addGroup" method="POST">
+	<h3> Create a Friend Group: </h3>
+		<input type="text" id="friend_group" placeholder="Enter a new Group Name" name = "group_name" required/><br>
+		<input type="text" id="friend_group2" placeholder="Give a description" name = "description"><br>
+		<input type="submit" value = Create />
+
+</form>
+<br>
+
+
+<h3>View All Posts:</h3>
 <table>
 	<th>item_id</th>
 	<th>email_post</th>
@@ -78,7 +113,7 @@
 	<th>item_name</th>
     <th>location</th>
 
-	{% for line in posts %}
+{% for line in posts %}
 	<tr>
 		<form action="/tag" method="POST">
 		<td>{{line.item_id}}</td>
@@ -88,14 +123,16 @@
 		<td>{{line.item_name}}</td>
         <td>{{line.location}}</td>
 		<td> <div id="tagBox"> <input type="text" id="tagged" placeholder="Enter a Person to tag" name = "tagged" required/> <input type="hidden" class="form-control" name="item_id" value="{{line.item_id}}"> </div> <input type="submit" value = Tag /> </td>
-		{% if error %}
-			<p class="error"><strong>Error:</strong> {{error1}}</p>
-		{% endif %}
+			{% if error %}
+				<p class="error"><strong>Error:</strong> {{error1}}</p>
+			{% endif %}
 		</form>
+
+		<td> <a href="/moreInfo">More Info</a> </td>
+
 	</tr>
 	{% endfor %}
 </table>
-
 <br>
 
 <h3>Public Comments:</h3>
@@ -108,7 +145,7 @@
 	<tr>
 		<td>{{line.commenter}}</td>
 		<td>{{line.item_id}}</td>
-		<td>{{line.comment}}</td>
+		<td>{{line.text}}</td>
 	</tr>
 {% endfor %}
 </table>
@@ -123,22 +160,11 @@
 	<tr>
 		<td>{{line.location}}</td>
 		<td>{{line.Email}}</td>
-
 	</tr>
 {% endfor %}
 </table>
+</div>
 <br>
 
-<form action="/addGroup" method="POST">
-	<h3> Create a Friend Group: </h3>
-		<input type="text" id="friend_group" placeholder="Enter a new Group Name" name = "group_name" required/><br>
-		<input type="text" id="friend_group" placeholder="Give a description" name = "description"><br>
-		<input type="submit" value = Create />
-
-</form>
-<br>
-<a href="/tagPage">My Tags</a> <br>
-<a href="/logout">Logout</a>
-<br>
 </body>
 </html>
