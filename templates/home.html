@@ -128,8 +128,10 @@ li a:hover:not(.active) {
 			{% endif %}
 		</form>
 
-		<td> <a href="/moreInfo">More Info</a> </td>
+		<form action = "/indexId" method="POST">
+		<td> <button name = "itemId" type = 'submit' value="{{line.item_id}}"> More Info </button> </td>
 
+		</form>
 	</tr>
 	{% endfor %}
 </table>

@@ -153,20 +153,41 @@ def home():
     cursor.close()
     return render_template('home.html', username=email, posts=data, fg=fg, locdata=loc, comments=cm)
 
-
-@app.route('/moreInfo')
-def moreInfo():
-    email = session['email']
+@app.route('/indexId', methods=['GET', 'POST'])
+def getIndexID():
+    item_id = request.form['itemId']
     cursor = conn.cursor()
-    query = 'SELECT item_id, email_post, post_time, item_name, concat(fname, " ", lname) as "Tagged People"' \
-            'FROM contentitem NATURAL LEFT OUTER JOIN tag NATURAL JOIN person WHERE tag.status = "true"' \
-            'AND contentitem.email_post= %s AND person.email = tag.email_tagged ORDER BY post_time desc'
-
-    cursor.execute(query, email)
+    newview = 'CREATE VIEW names as (SELECT concat(fname, " ", lname)as fullName, item_id FROM tag NATURAL JOIN person WHERE person.email = tag.email_tagged AND tag.status = "true")'
+    cursor.execute(newview)
+    conn.commit()
+    query = 'SELECT fullName, item_id FROM names WHERE item_id = %s'
+    cursor.execute(query, item_id)
     data = cursor.fetchall()
+    dropFGview = 'DROP VIEW names'
+    cursor.execute(dropFGview)
     cursor.close()
+    return render_template('moreInfo.html', aItemId=item_id,allTags=data)
 
-    return render_template('moreInfo.html', username=email, allTags=data)
+# @app.route('/moreInfo')
+# def moreInfo():
+#     email = session['email']
+#     item_id = getIndexID()
+#     cursor = conn.cursor()
+#     #query = 'SELECT item_id, email_post, post_time, item_name, concat(fname, " ", lname) as "Tagged People"' \
+#      #       'FROM contentitem NATURAL LEFT OUTER JOIN tag NATURAL JOIN person WHERE tag.status = "true"' \
+#       #      'AND contentitem.email_post= %s AND person.email = tag.email_tagged ORDER BY post_time desc'
+#
+#     newview = 'CREATE VIEW names as (SELECT concat(fname, " ", lname)as fullName, item_id FROM tag NATURAL JOIN person)'
+#     cursor.execute(newview)
+#     conn.commit()
+#     query = 'SELECT fullName, item_id FROM newnames WHERE item_id = %s'
+#     cursor.execute(query, item_id)
+#     data = cursor.fetchall()
+#     dropFGview = 'DROP VIEW newnames'
+#     cursor.execute(dropFGview)
+#     cursor.close()
+#
+#     return render_template('moreInfo.html', username=email, allTags=data)
 
 @app.route('/addGroup', methods=['POST'])
 def addGroup():
