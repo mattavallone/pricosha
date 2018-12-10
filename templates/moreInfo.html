@@ -76,6 +76,23 @@ li a:hover:not(.active) {
 	{% endfor %}
 </table>
 <br>
+
+<h3>Ratings:</h3>
+<br>
+<table>
+	<th>item_id</th>
+    <th>Person</th>
+    <th>Rating</th>
+
+{% for line in allTags %}
+	<tr>
+		<td>{{line.item_id}}</td>
+        <td>{{line.fullName}}</td>
+        <td>{{line.emoji}}</td>
+	</tr>
+	{% endfor %}
+</table>
+
 </div>
 </body>
 </html>

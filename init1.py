@@ -155,7 +155,7 @@ def home():
 
 
 @app.route('/indexId', methods=['GET', 'POST'])
-def getIndexID():
+def moreInfo():
     item_id = request.form['itemId']
     cursor = conn.cursor()
     newview = 'CREATE VIEW names as (SELECT concat(fname, " ", lname)as fullName, item_id FROM tag NATURAL JOIN person WHERE person.email = tag.email_tagged AND tag.status = "true")'
@@ -167,28 +167,19 @@ def getIndexID():
     dropFGview = 'DROP VIEW names'
     cursor.execute(dropFGview)
     cursor.close()
+
+    cursor = conn.cursor()
+    newview2 = 'CREATE VIEW ratings as (SELECT concat(fname, " ", lname)as fullName, item_id , emoji FROM rate NATURAL JOIN person WHERE person.email = rate.email)'
+    cursor.execute(newview2)
+    conn.commit()
+    query2 = 'SELECT fullName, item_id, emoji FROM ratings WHERE item_id = %s'
+    cursor.execute(query2, item_id)
+    data2 = cursor.fetchall()
+    dropRateview = 'DROP VIEW ratings'
+    cursor.execute(dropRateview)
+    cursor.close()
     return render_template('moreInfo.html', aItemId=item_id,allTags=data)
 
-# @app.route('/moreInfo')
-# def moreInfo():
-#     email = session['email']
-#     item_id = getIndexID()
-#     cursor = conn.cursor()
-#     #query = 'SELECT item_id, email_post, post_time, item_name, concat(fname, " ", lname) as "Tagged People"' \
-#      #       'FROM contentitem NATURAL LEFT OUTER JOIN tag NATURAL JOIN person WHERE tag.status = "true"' \
-#       #      'AND contentitem.email_post= %s AND person.email = tag.email_tagged ORDER BY post_time desc'
-#
-#     newview = 'CREATE VIEW names as (SELECT concat(fname, " ", lname)as fullName, item_id FROM tag NATURAL JOIN person)'
-#     cursor.execute(newview)
-#     conn.commit()
-#     query = 'SELECT fullName, item_id FROM newnames WHERE item_id = %s'
-#     cursor.execute(query, item_id)
-#     data = cursor.fetchall()
-#     dropFGview = 'DROP VIEW newnames'
-#     cursor.execute(dropFGview)
-#     cursor.close()
-#
-#     return render_template('moreInfo.html', username=email, allTags=data)
 
 
 @app.route('/addGroup', methods=['POST'])
@@ -438,6 +429,41 @@ def tagChoice():
         conn.commit()
         cursor.close()
     return redirect(url_for('tagPage'))
+
+@app.route('/likeContent', methods=['POST'])
+def likeContent():
+    email = session['email']
+    item_id = request.form['item_id']
+    rateTime = datetime.datetime.now()
+    like = request.form['Rate']
+    cursor = conn.cursor()
+    query1 = "SELECT email, item_id FROM rate WHERE email = %s AND item_id = %s"
+    cursor.execute(query1, (email, item_id))
+    exist_data = cursor.fetchone()
+    if (not exist_data):
+        if like == "Like":
+            cursor = conn.cursor()
+            query = "INSERT INTO rate (email, item_id, rate_time, emoji) VALUES (%s, %s, %s, ':)')"
+            conn.commit()
+            cursor.execute(query, (email, item_id, rateTime))
+        elif like == "Dislike":
+            cursor = conn.cursor()
+            query = "INSERT INTO rate (email, item_id, rate_time, emoji) VALUES (%s, %s, %s, ':(')"
+            conn.commit()
+            cursor.execute(query, (email, item_id, rateTime))
+    else:
+        if like == "Like":
+            cursor = conn.cursor()
+            query = "UPDATE rate SET emoji = ':)', rate_time = %s WHERE email = %s AND item_id = %s"
+            conn.commit()
+            cursor.execute(query, (rateTime, email, item_id))
+        elif like == "Dislike":
+            cursor = conn.cursor()
+            query = "UPDATE rate SET emoji = ':(', rate_time = %s WHERE email = %s AND item_id = %s"
+            conn.commit()
+            cursor.execute(query, (rateTime, email, item_id))
+    cursor.close()
+    return redirect(url_for('home'))
 
 
 @app.route('/logout')

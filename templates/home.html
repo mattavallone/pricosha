@@ -113,6 +113,7 @@ li a:hover:not(.active) {
 	<th>Item Name</th>
     <th>Location</th>
     <th>Tag a Person:</th>
+    <th>Rate Content</th>
     <th>&nbsp;</th>
 
 {% for line in posts %}
@@ -130,9 +131,20 @@ li a:hover:not(.active) {
 			{% endif %}
 		</form>
 
+        <form action= "/likeContent" method="POST">
+            <td>
+                <input list="rateThis" name="Rate" required>
+                <datalist id="rateThis">
+                    <option value="Like">
+                    <option value="Dislike">
+                </datalist>
+                <input type="hidden" name = "item_id" value="{{line.item_id}}">
+                <input type="submit">
+            </td>
+        </form>
+
 		<form action = "/indexId" method="POST">
 		<td> <button name = "itemId" type = 'submit' value="{{line.item_id}}"> More Info </button> </td>
-
 		</form>
 	</tr>
 	{% endfor %}
