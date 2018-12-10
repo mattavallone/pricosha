@@ -82,8 +82,8 @@ def registerAuth():
 
     # Checking for spaces at the ends of fname and lname; spaces anywhere in email or password
     fnameSpaceLocation = find(fname, ' ')  # calls function described above
-    if int(len(fname)-1) in fnameSpaceLocation:
-        fname = fname[:int(len(fname)-2)]
+    if int(len(fname)-1) in fnameSpaceLocation:  # checks if there is space accidentally at end of name
+        fname = fname[:int(len(fname)-2)]  # chops off space at the end of the string
     lnameSpaceLocation = find(lname, ' ')
     if int(len(lname)-1) in lnameSpaceLocation:
         lname = lname[:int(len(lname)-2)]
@@ -95,15 +95,10 @@ def registerAuth():
     cursor.execute(query, email)
     data = cursor.fetchone()
 
-    emailSpaceExists = email.find(' ')  # Finding any spaces in your email
-    passwordSpaceExists = password.find(' ')  # Finding any spaces in your password
-
     if data:  # checking to see if person already exists
         error = "This person already exists"
         return render_template('register.html', error=error)
-    elif emailSpaceExists or passwordSpaceExists:
-        spaceError = "Please remove any spaces from your email or password"
-        return render_template('register.html', error=spaceError)
+
     else:
         ins = 'INSERT INTO person VALUES(%s, %s, %s, %s)'
         cursor.execute(ins, (email, pw, fname, lname))
@@ -120,14 +115,14 @@ def home():
             'OR contentitem.email_post= %s OR contentitem.item_id in (SELECT item_id FROM share WHERE %s in' \
             '(SELECT belong.email FROM belong WHERE share.fg_name = belong.fg_name) OR %s in (SELECT owner_email FROM' \
             'friendgroup WHERE share.fg_name = fg_name )) AND post_time >= NOW() - INTERVAL 1 DAY ORDER BY post_time desc'
-    cursor.execute(query, (email, email, email))
+    cursor.execute(query, (email, email, email))  # Getting all content items visible to users from the last day
     data = cursor.fetchall()
     cursor.close()
 
     cursor = conn.cursor()
     fgnames = 'SELECT fg_name FROM friendgroup WHERE owner_email = %s'
-    cursor.execute(fgnames, email)  # retrieving friend groups existing in database
-    fg = cursor.fetchall()  # returns tuples of possible friend group names that exist in DB
+    cursor.execute(fgnames, email)  # retrieving friend groups existing in database that user owns
+    fg = cursor.fetchall()
     cursor.close()
 
     cursor = conn.cursor()
@@ -135,7 +130,7 @@ def home():
                'SELECT item_id FROM share WHERE %s in (SELECT belong.email FROM belong WHERE share.fg_name = ' \
                'belong.fg_name) OR %s in (SELECT owner_email FROM friendgroup WHERE share.fg_name = fg_name)) '
     cursor.execute(comments, (email, email, email))  # retrieving comments visible to user existing in database
-    cm = cursor.fetchall()  # returns tuples of possible friend group names that exist in DB
+    cm = cursor.fetchall()
     cursor.close()
 
     cursor = conn.cursor()
@@ -145,7 +140,7 @@ def home():
     locdata = 'SELECT location, email_post AS Email FROM contentItem WHERE location IS NOT NULL AND ' \
               'contentItem.email_post IN (SELECT DISTINCT email FROM belong NATURAL JOIN FG WHERE email != %s)AND ' \
               'location IN (SELECT DISTINCT location FROM contentItem WHERE email_post = %s); '
-    cursor.execute(locdata, (email, email))
+    cursor.execute(locdata, (email, email))  # finding friends that have posted content in similar locations as user
     loc = cursor.fetchall()
     dropFGview = 'DROP VIEW FG;'
     cursor.execute(dropFGview)
@@ -162,7 +157,7 @@ def moreInfo():
     cursor.execute(newview)
     conn.commit()
     query = 'SELECT fullName, item_id FROM names WHERE item_id = %s'
-    cursor.execute(query, item_id)
+    cursor.execute(query, item_id)  # retrieving names of people tagged to a specific content item visible to user
     data = cursor.fetchall()
     dropFGview = 'DROP VIEW names'
     cursor.execute(dropFGview)
@@ -173,7 +168,7 @@ def moreInfo():
     cursor.execute(newview2)
     conn.commit()
     query2 = 'SELECT fullName, item_id, emoji FROM ratings WHERE item_id = %s'
-    cursor.execute(query2, item_id)
+    cursor.execute(query2, item_id)  # retrieving names of people who rated a specific content item visible to user
     data2 = cursor.fetchall()
     dropRateview = 'DROP VIEW ratings'
     cursor.execute(dropRateview)
@@ -213,9 +208,9 @@ def addGroup():
 @app.route('/editFriends', methods=["GET", "POST"])
 def view_friend():
     user = session['email']
-    cursor = conn.cursor();
+    cursor = conn.cursor()
     query = 'SELECT fg_name, description FROM friendgroup WHERE owner_email = %s'
-    cursor.execute(query, (user))
+    cursor.execute(query, user)
     data = cursor.fetchall()
     cursor.close()
     return render_template('editFriends.html', friendgroup=data)
@@ -294,7 +289,7 @@ def post():
     if location == '':  # if location not specified, set it to NULL
         location = None
 
-    if is_private == '1':
+    if is_private == '1':  # If the post is private
         is_public = '0'
 
         friend_group = request.form.getlist('friend_group')
@@ -350,12 +345,12 @@ def tagPage():
     email = session['email']
     cursor = conn.cursor()
     query = 'SELECT item_id, email_tagger, tagtime FROM Tag WHERE email_tagged = %s AND status = %s'
-    cursor.execute(query, (email, 'false'))
+    cursor.execute(query, (email, 'false'))  # Tags pending approval from user
     data = cursor.fetchall()
     cursor.close()
     cursor = conn.cursor()
     query = 'SELECT item_id, email_tagger, tagtime FROM Tag WHERE email_tagged = %s AND status = %s'
-    cursor.execute(query, (email, 'true'))
+    cursor.execute(query, (email, 'true'))  # Tags approved by user
     data2 = cursor.fetchall()
     cursor.close()
 
@@ -472,6 +467,7 @@ def likeContent():
 def logout():
     session.pop('email')
     return redirect('/')
+
 
 app.secret_key = 'some key that you will never guess'
 # Run the app on localhost port 5000
