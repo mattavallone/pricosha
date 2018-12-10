@@ -54,7 +54,7 @@ li a:hover:not(.active) {
 
 <ul>
   <li><a class="active" href="/home">Home</a></li>
-  <li><a href="/editFriends">Edit Friends</a></li>
+  <li><a href="/editFriends">My Friend Groups</a></li>
   <li><a href="/tagPage">My Tags</a></li>
   <li><a href="/logout">Logout</a></li>
 </ul>
@@ -106,12 +106,14 @@ li a:hover:not(.active) {
 
 <h3>View All Posts:</h3>
 <table>
-	<th>item_id</th>
-	<th>email_post</th>
-	<th>post_time</th>
-	<th>file_path</th>
-	<th>item_name</th>
-    <th>location</th>
+	<th>Item ID</th>
+	<th>Email Post</th>
+	<th>Post Time</th>
+	<th>File Path</th>
+	<th>Item Name</th>
+    <th>Location</th>
+    <th>Tag a Person:</th>
+    <th>&nbsp;</th>
 
 {% for line in posts %}
 	<tr>

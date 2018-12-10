@@ -189,6 +189,7 @@ def getIndexID():
 #
 #     return render_template('moreInfo.html', username=email, allTags=data)
 
+
 @app.route('/addGroup', methods=['POST'])
 def addGroup():
     owner_email = session['email']
@@ -436,6 +437,7 @@ def tagChoice():
         conn.commit()
         cursor.close()
     return redirect(url_for('tagPage'))
+
 
 @app.route('/logout')
 def logout():
