@@ -26,7 +26,7 @@ def hello():
     cursor = conn.cursor()
     query = 'SELECT item_id, email_post, post_time, file_path, item_name, location FROM contentitem WHERE is_pub = ' \
             '1 AND post_time >= NOW() - INTERVAL 1 DAY '  # only show public content posted from the last day
-    cursor.execute(query)
+    cursor.execute(query)  # Displaying public posts before login
     data = cursor.fetchall()
     cursor.close()
     return render_template('index.html', publicposts=data)
@@ -81,9 +81,9 @@ def registerAuth():
     password = request.form['password']
 
     # Checking for spaces at the ends of fname and lname; spaces anywhere in email or password
-    fnameSpaceLocation = find(fname, ' ')
-    if int(len(fname)-1) in fnameSpaceLocation:
-        fname = fname[:int(len(fname)-2)]
+    fnameSpaceLocation = find(fname, ' ')  # calls function described above
+    if int(len(fname)-1) in fnameSpaceLocation:  # checks if there is space accidentally at end of name
+        fname = fname[:int(len(fname)-2)]  # chops off space at the end of the string
     lnameSpaceLocation = find(lname, ' ')
     if int(len(lname)-1) in lnameSpaceLocation:
         lname = lname[:int(len(lname)-2)]
@@ -95,15 +95,10 @@ def registerAuth():
     cursor.execute(query, email)
     data = cursor.fetchone()
 
-    emailSpaceExists = email.find(' ')  # Finding any spaces in your email
-    passwordSpaceExists = password.find(' ')  # Finding any spaces in your password
-
     if data:  # checking to see if person already exists
         error = "This person already exists"
         return render_template('register.html', error=error)
-    elif emailSpaceExists or passwordSpaceExists:
-        spaceError = "Please remove any spaces from your email or password"
-        return render_template('register.html', error=spaceError)
+
     else:
         ins = 'INSERT INTO person VALUES(%s, %s, %s, %s)'
         cursor.execute(ins, (email, pw, fname, lname))
@@ -120,14 +115,14 @@ def home():
             'OR contentitem.email_post= %s OR contentitem.item_id in (SELECT item_id FROM share WHERE %s in' \
             '(SELECT belong.email FROM belong WHERE share.fg_name = belong.fg_name) OR %s in (SELECT owner_email FROM' \
             'friendgroup WHERE share.fg_name = fg_name )) AND post_time >= NOW() - INTERVAL 1 DAY ORDER BY post_time desc'
-    cursor.execute(query, (email, email, email))
+    cursor.execute(query, (email, email, email))  # Getting all content items visible to users from the last day
     data = cursor.fetchall()
     cursor.close()
 
     cursor = conn.cursor()
     fgnames = 'SELECT fg_name FROM friendgroup WHERE owner_email = %s'
-    cursor.execute(fgnames, email)  # retrieving friend groups existing in database
-    fg = cursor.fetchall()  # returns tuples of possible friend group names that exist in DB
+    cursor.execute(fgnames, email)  # retrieving friend groups existing in database that user owns
+    fg = cursor.fetchall()
     cursor.close()
 
     cursor = conn.cursor()
@@ -135,7 +130,7 @@ def home():
                'SELECT item_id FROM share WHERE %s in (SELECT belong.email FROM belong WHERE share.fg_name = ' \
                'belong.fg_name) OR %s in (SELECT owner_email FROM friendgroup WHERE share.fg_name = fg_name)) '
     cursor.execute(comments, (email, email, email))  # retrieving comments visible to user existing in database
-    cm = cursor.fetchall()  # returns tuples of possible friend group names that exist in DB
+    cm = cursor.fetchall()
     cursor.close()
 
     cursor = conn.cursor()
@@ -145,7 +140,7 @@ def home():
     locdata = 'SELECT location, email_post AS Email FROM contentItem WHERE location IS NOT NULL AND ' \
               'contentItem.email_post IN (SELECT DISTINCT email FROM belong NATURAL JOIN FG WHERE email != %s)AND ' \
               'location IN (SELECT DISTINCT location FROM contentItem WHERE email_post = %s); '
-    cursor.execute(locdata, (email, email))
+    cursor.execute(locdata, (email, email))  # finding friends that have posted content in similar locations as user
     loc = cursor.fetchall()
     dropFGview = 'DROP VIEW FG;'
     cursor.execute(dropFGview)
@@ -154,19 +149,34 @@ def home():
     return render_template('home.html', username=email, posts=data, fg=fg, locdata=loc, comments=cm)
 
 
-@app.route('/moreInfo')
+@app.route('/indexId', methods=['GET', 'POST'])
 def moreInfo():
-    email = session['email']
+    item_id = request.form['itemId']
     cursor = conn.cursor()
-    query = 'SELECT item_id, email_post, post_time, item_name, concat(fname, " ", lname) as "Tagged People"' \
-            'FROM contentitem NATURAL LEFT OUTER JOIN tag NATURAL JOIN person WHERE tag.status = "true"' \
-            'AND contentitem.email_post= %s AND person.email = tag.email_tagged ORDER BY post_time desc'
-
-    cursor.execute(query, email)
+    newview = 'CREATE VIEW names as (SELECT concat(fname, " ", lname)as fullName, item_id FROM tag NATURAL JOIN person WHERE person.email = tag.email_tagged AND tag.status = "true")'
+    cursor.execute(newview)
+    conn.commit()
+    query = 'SELECT fullName, item_id FROM names WHERE item_id = %s'
+    cursor.execute(query, item_id)  # retrieving names of people tagged to a specific content item visible to user
     data = cursor.fetchall()
+    dropFGview = 'DROP VIEW names'
+    cursor.execute(dropFGview)
     cursor.close()
 
-    return render_template('moreInfo.html', username=email, allTags=data)
+    cursor = conn.cursor()
+    newview2 = 'CREATE VIEW ratings as (SELECT concat(fname, " ", lname)as fullName, item_id , emoji FROM rate NATURAL JOIN person WHERE person.email = rate.email)'
+    cursor.execute(newview2)
+    conn.commit()
+    query2 = 'SELECT fullName, item_id, emoji FROM ratings WHERE item_id = %s'
+    cursor.execute(query2, item_id)  # retrieving names of people who rated a specific content item visible to user
+    data2 = cursor.fetchall()
+    dropRateview = 'DROP VIEW ratings'
+    cursor.execute(dropRateview)
+    cursor.close()
+
+    return render_template('moreInfo.html', aItemId=item_id, allTags=data, allRates=data2)
+
+
 
 @app.route('/addGroup', methods=['POST'])
 def addGroup():
@@ -198,9 +208,9 @@ def addGroup():
 @app.route('/editFriends', methods=["GET", "POST"])
 def view_friend():
     user = session['email']
-    cursor = conn.cursor();
+    cursor = conn.cursor()
     query = 'SELECT fg_name, description FROM friendgroup WHERE owner_email = %s'
-    cursor.execute(query, (user))
+    cursor.execute(query, user)
     data = cursor.fetchall()
     cursor.close()
     return render_template('editFriends.html', friendgroup=data)
@@ -208,32 +218,32 @@ def view_friend():
 
 @app.route('/friendCtrl', methods=['GET', 'POST'])
 def friendCtrl():
-    #Get info of the new friend
-    owner = session['email'] #current user email
+    # Get info of the new friend
+    owner = session['email']  # current user email
     friend_fname = request.form['friend_fname']
     friend_lname = request.form['friend_lname']
     fg_name = request.form['fg']
 
-    #Get user's friend in FriendGroup
+    # Get user's friend in FriendGroup
     cursor = conn.cursor()
     query = 'SELECT fg_name, description FROM friendgroup WHERE owner_email = %s'
     cursor.execute(query, (owner))
     fg_data = cursor.fetchall()
 
     # Check new Friend with existing list of Friends within the group
-    query = 'SELECT fname, lname FROM person WHERE fname = %s AND lname = %s'
+    query = 'SELECT fname, lname FROM person WHERE fname = %s AND lname = %s'  # first check if Person exists
     cursor.execute(query, (friend_fname, friend_lname))
     exist_data = cursor.fetchone()
 
     if (not exist_data):
         msg = "This user does not exist."
         return render_template('editFriends.html', friendgroup=fg_data, msg=msg)
-    #Gets the email of person with the given f&l_name
+    # Gets the email of person with the given f&l_name
     query = 'SELECT email FROM person WHERE fname = %s AND lname = %s'
     cursor.execute(query, (friend_fname, friend_lname))
     email_data = cursor.fetchone()
     newFreindEmail = email_data['email']
-    #Gets all the emails associated with the current user email
+    # Gets all the emails associated with the current user email
     query = 'SELECT email FROM belong WHERE email = %s AND fg_name = %s'
     cursor.execute(query, (newFreindEmail, fg_name))
     data = cursor.fetchone()
@@ -279,7 +289,7 @@ def post():
     if location == '':  # if location not specified, set it to NULL
         location = None
 
-    if is_private == '1':
+    if is_private == '1':  # If the post is private
         is_public = '0'
 
         friend_group = request.form.getlist('friend_group')
@@ -335,12 +345,12 @@ def tagPage():
     email = session['email']
     cursor = conn.cursor()
     query = 'SELECT item_id, email_tagger, tagtime FROM Tag WHERE email_tagged = %s AND status = %s'
-    cursor.execute(query, (email, 'false'))
+    cursor.execute(query, (email, 'false'))  # Tags pending approval from user
     data = cursor.fetchall()
     cursor.close()
     cursor = conn.cursor()
     query = 'SELECT item_id, email_tagger, tagtime FROM Tag WHERE email_tagged = %s AND status = %s'
-    cursor.execute(query, (email, 'true'))
+    cursor.execute(query, (email, 'true'))  # Tags approved by user
     data2 = cursor.fetchall()
     cursor.close()
 
@@ -416,10 +426,48 @@ def tagChoice():
         cursor.close()
     return redirect(url_for('tagPage'))
 
+
+@app.route('/likeContent', methods=['POST'])
+def likeContent():
+    email = session['email']
+    item_id = request.form['item_id']
+    rateTime = datetime.datetime.now()
+    like = request.form['Rate']
+    cursor = conn.cursor()
+    query1 = "SELECT email, item_id FROM rate WHERE email = %s AND item_id = %s"
+    cursor.execute(query1, (email, item_id))
+    exist_data = cursor.fetchone()
+    if (not exist_data):
+        if like == "Like":
+            cursor = conn.cursor()
+            query = "INSERT INTO rate (email, item_id, rate_time, emoji) VALUES (%s, %s, %s, ':)')"
+            conn.commit()
+            cursor.execute(query, (email, item_id, rateTime))
+        elif like == "Dislike":
+            cursor = conn.cursor()
+            query = "INSERT INTO rate (email, item_id, rate_time, emoji) VALUES (%s, %s, %s, ':(')"
+            conn.commit()
+            cursor.execute(query, (email, item_id, rateTime))
+    else:
+        if like == "Like":
+            cursor = conn.cursor()
+            query = "UPDATE rate SET emoji = ':)', rate_time = %s WHERE email = %s AND item_id = %s"
+            conn.commit()
+            cursor.execute(query, (rateTime, email, item_id))
+        elif like == "Dislike":
+            cursor = conn.cursor()
+            query = "UPDATE rate SET emoji = ':(', rate_time = %s WHERE email = %s AND item_id = %s"
+            conn.commit()
+            cursor.execute(query, (rateTime, email, item_id))
+    cursor.close()
+    return redirect(url_for('home'))
+
+
 @app.route('/logout')
 def logout():
     session.pop('email')
     return redirect('/')
+
 
 app.secret_key = 'some key that you will never guess'
 # Run the app on localhost port 5000

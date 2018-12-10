@@ -53,7 +53,7 @@ li a:hover:not(.active) {
 </style>
 <ul>
   <li><a href="/home">Home</a></li>
-  <li><a href="/editFriends">Edit Friends</a></li>
+  <li><a href="/editFriends">My Friend Groups</a></li>
   <li><a class="active" href="/tagPage">My Tags</a></li>
   <li><a href="/logout">Logout</a></li>
 </ul>
@@ -63,9 +63,9 @@ li a:hover:not(.active) {
 <h1>Tag Information</h1>
 <h3>Tags Pending Approval:</h3>
 <table>
-	<th>item_id</th>
+	<th>Item ID</th>
 	<th>Tagger</th>
-	<th>Tag time</th>
+	<th>Tag Time</th>
 
 {% for line in tagsPending %}
 	<tr>
@@ -82,9 +82,9 @@ li a:hover:not(.active) {
 
   <h3>Approved Tags:</h3>
 <table>
-	<th>item_id</th>
+	<th>Item ID</th>
 	<th>Tagger</th>
-	<th>Tag time</th>
+	<th>Tag Time</th>
 
 {% for line in tagsApproved %}
 	<tr>

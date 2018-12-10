@@ -54,7 +54,7 @@ li a:hover:not(.active) {
 
 <ul>
   <li><a class="active" href="/home">Home</a></li>
-  <li><a href="/editFriends">Edit Friends</a></li>
+  <li><a href="/editFriends">My Friend Groups</a></li>
   <li><a href="/tagPage">My Tags</a></li>
   <li><a href="/logout">Logout</a></li>
 </ul>
@@ -104,14 +104,17 @@ li a:hover:not(.active) {
 <br>
 
 
-<h3>View All Posts:</h3>
+<h3>Visible Posts:</h3>
 <table>
-	<th>item_id</th>
-	<th>email_post</th>
-	<th>post_time</th>
-	<th>file_path</th>
-	<th>item_name</th>
-    <th>location</th>
+	<th>Item ID</th>
+	<th>Email Post</th>
+	<th>Post Time</th>
+	<th>File Path</th>
+	<th>Item Name</th>
+    <th>Location</th>
+    <th>Tag a Person:</th>
+    <th>Rate Content</th>
+    <th>&nbsp;</th>
 
 {% for line in posts %}
 	<tr>
@@ -122,24 +125,37 @@ li a:hover:not(.active) {
 		<td>{{line.file_path}}</td>
 		<td>{{line.item_name}}</td>
         <td>{{line.location}}</td>
-		<td> <div id="tagBox"> <input type="text" id="tagged" placeholder="Enter a Person to tag" name = "tagged" required/> <input type="hidden" class="form-control" name="item_id" value="{{line.item_id}}"> </div> <input type="submit" value = Tag /> </td>
+		<td> <div id="tagBox"> <input type="email" id="tagged" placeholder="Enter a Person to tag" name = "tagged" required/> <input type="hidden" class="form-control" name="item_id" value="{{line.item_id}}"> </div> <input type="submit" value = Tag /> </td>
 			{% if error %}
 				<p class="error"><strong>Error:</strong> {{error1}}</p>
 			{% endif %}
 		</form>
 
-		<td> <a href="/moreInfo">More Info</a> </td>
+        <form action= "/likeContent" method="POST">
+            <td>
+                <input list="rateThis" name="Rate" required>
+                <datalist id="rateThis">
+                    <option value="Like">
+                    <option value="Dislike">
+                </datalist>
+                <input type="hidden" name = "item_id" value="{{line.item_id}}">
+                <input type="submit">
+            </td>
+        </form>
 
+		<form action = "/indexId" method="POST">
+		<td> <button name = "itemId" type = 'submit' value="{{line.item_id}}"> More Info </button> </td>
+		</form>
 	</tr>
 	{% endfor %}
 </table>
 <br>
 
-<h3>Public Comments:</h3>
+<h3>Visible Comments:</h3>
 <table>
-	<th>commenter</th>
-	<th>item_id</th>
-	<th>comment</th>
+	<th>Commenter</th>
+	<th>Item ID</th>
+	<th>Comment</th>
 
 {% for line in comments %}
 	<tr>
